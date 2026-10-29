@@ -1,0 +1,22 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+!.env.example
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ==========================================
+# LOCAL AI CONTEXT & TOKEN OPTIMIZATION
+# NEVER COMMIT OR DEPLOY THESE FILES
+# ==========================================
+CODEBASE_SCHEMA.md
+AGENTS.md
+.agents/
+.gemini/
+mcp_config.json
+

@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   MODO TÁCTICO DE CAMPO (ALTO CONTRASTE / SUNLIGHT READY)
+   Elimina desenfoques pesados, eleva el contraste a fondos negros puros,
+   bordes nítidos ámbar/esmeralda y botones táctiles de mínimo 56px de alto.
+   ============================================================================ */
+.modo-tactico-campo {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+.modo-tactico-campo section,
+.modo-tactico-campo article,
+.modo-tactico-campo header,
+.modo-tactico-campo nav {
+  background-color: #020617 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(245, 158, 11, 0.75) !important;
+}
+
+.modo-tactico-campo p,
+.modo-tactico-campo span,
+.modo-tactico-campo label,
+.modo-tactico-campo td,
+.modo-tactico-campo th {
+  font-weight: 600;
+}
+
+.modo-tactico-campo .boton-tactico-campo {
+  min-height: 56px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  border-width: 2px;
+}

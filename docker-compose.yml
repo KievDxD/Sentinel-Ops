@@ -1,0 +1,24 @@
+services:
+  base_datos_sentinel:
+    image: postgres:15-alpine
+    container_name: sentinel_ops_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: administrador_sentinel
+      POSTGRES_PASSWORD: clave_segura_sentinel_2026
+      POSTGRES_DB: sentinel_ops_bd
+      TZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - volumen_datos_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U administrador_sentinel -d sentinel_ops_bd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  volumen_datos_postgres:
+    name: sentinel_ops_volumen_datos
+

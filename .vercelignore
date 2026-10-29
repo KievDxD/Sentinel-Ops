@@ -1,0 +1,29 @@
+# ==========================================
+# ARCHIVOS EXCLUIDOS DEL DESPLIEGUE EN VERCEL
+# ==========================================
+node_modules/
+frontend/node_modules/
+.venv/
+backend/.venv/
+__pycache__/
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+.git/
+.vscode/
+.idea/
+*.log
+
+# ==========================================
+# LOCAL AI CONTEXT & TOKEN OPTIMIZATION
+# NEVER COMMIT OR DEPLOY THESE FILES
+# ==========================================
+CODEBASE_SCHEMA.md
+AGENTS.md
+.agents/
+.gemini/
+mcp_config.json
+

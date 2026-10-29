@@ -1,0 +1,29 @@
+[project]
+name = "sentinel-ops-backend"
+version = "1.0.0"
+requires-python = ">=3.10"
+
+[tool.pyrefly]
+python-version = "3.15"
+search-paths = [
+    ".",
+    "app",
+    ".venv/Lib/site-packages"
+]
+
+[tool.pyright]
+include = ["."]
+extraPaths = [
+    ".",
+    "app",
+    ".venv/Lib/site-packages"
+]
+pythonVersion = "3.15"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+pythonpath = [".", "backend"]
+asyncio_default_fixture_loop_scope = "function"
+
+

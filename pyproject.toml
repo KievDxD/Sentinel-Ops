@@ -1,0 +1,26 @@
+[project]
+name = "sentinel-ops"
+version = "1.0.0"
+description = "SENTINEL // OPS - Plataforma SaaS B2B de Gestión Operativa y Turnos 2x2"
+requires-python = ">=3.10"
+
+[tool.pyrefly]
+python-version = "3.15"
+search-paths = [
+    "backend",
+    "backend/app",
+    "backend/.venv/Lib/site-packages"
+]
+
+[tool.pyright]
+include = ["backend"]
+extraPaths = [
+    "backend",
+    "backend/app",
+    "backend/.venv/Lib/site-packages"
+]
+pythonVersion = "3.15"
+pythonPlatform = "Windows"
+venvPath = "backend"
+venv = ".venv"
+

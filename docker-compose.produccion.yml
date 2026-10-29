@@ -1,0 +1,50 @@
+services:
+  base_datos_sentinel:
+    image: postgres:15-alpine
+    container_name: sentinel_ops_postgres_prod
+    restart: always
+    environment:
+      POSTGRES_USER: administrador_sentinel
+      POSTGRES_PASSWORD: clave_segura_sentinel_2026
+      POSTGRES_DB: sentinel_ops_bd
+      TZ: America/Bogota
+    ports:
+      - "5432:5432"
+    volumes:
+      - volumen_datos_postgres_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U administrador_sentinel -d sentinel_ops_bd"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  servidor_backend_sentinel:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sentinel_ops_backend_prod
+    restart: always
+    environment:
+      URL_BASE_DATOS_POSTGRES: postgresql+asyncpg://administrador_sentinel:clave_segura_sentinel_2026@base_datos_sentinel:5432/sentinel_ops_bd
+      TZ: America/Bogota
+    ports:
+      - "8000:8000"
+    depends_on:
+      base_datos_sentinel:
+        condition: service_healthy
+
+  servidor_frontend_sentinel:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sentinel_ops_frontend_prod
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - servidor_backend_sentinel
+
+volumes:
+  volumen_datos_postgres_prod:
+    name: sentinel_ops_volumen_datos_prod
+
