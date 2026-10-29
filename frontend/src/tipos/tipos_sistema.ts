@@ -59,6 +59,28 @@ export type EstadoFactura = "BORRADOR" | "EMITIDA" | "PAGADA" | "ANULADA";
 
 export type EstadoAlertaSos = "ACTIVA" | "ATENDIDA";
 
+export type TipoAccesoGarita =
+  | "PEATONAL_VISITANTE"
+  | "VEHICULAR"
+  | "CONTRATISTA"
+  | "EMPLEADO";
+
+export type EstadoAccesoGarita = "DENTRO" | "SALIO";
+
+export type TipoMovimientoBalistico =
+  | "DOTACION_INICIAL"
+  | "CONSUMO_INCIDENTE"
+  | "PRACTICA_POLIGONO"
+  | "MANTENIMIENTO_ARMERIA"
+  | "REPOSICION_INDUMIL";
+
+export type EstadoDespachoPatrulla =
+  | "PENDIENTE"
+  | "EN_RUTA"
+  | "EN_SITIO"
+  | "FINALIZADO"
+  | "CANCELADO";
+
 export interface RespuestaEstadoServidor {
   estado: string;
   fecha: string;
@@ -510,4 +532,179 @@ export interface PrefacturaB2B {
   firma_digital_sha256: string;
   fecha_emision: string;
   fecha_vencimiento: string;
+}
+
+// ============================================================================
+// FASE 9: CONTROL DE ACCESO GARITA Y ESCÁNER PDF417
+// ============================================================================
+export interface DatosCedulaColombiana {
+  documento_identidad: string;
+  primer_apellido: string;
+  segundo_apellido: string;
+  primer_nombre: string;
+  segundo_nombre: string;
+  nombre_completo: string;
+  sexo: string;
+  fecha_nacimiento?: string | null;
+  grupo_sanguineo_rh: string;
+  es_valido: boolean;
+  mensaje_validacion: string;
+}
+
+export interface SolicitudRegistrarAccesoGarita {
+  puesto_id: number;
+  tipo_acceso: TipoAccesoGarita;
+  documento_identidad: string;
+  nombres: string;
+  apellidos: string;
+  tipo_sangre_rh?: string;
+  placa_vehiculo?: string;
+  empresa_o_destino: string;
+  motivo_ingreso: string;
+  observaciones?: string;
+}
+
+export interface RegistroAccesoGarita {
+  acceso_id: number;
+  puesto_id: number;
+  nombre_puesto: string;
+  operador_id: number;
+  nombre_operador: string;
+  tipo_acceso: TipoAccesoGarita;
+  documento_identidad: string;
+  nombres: string;
+  apellidos: string;
+  nombre_completo: string;
+  tipo_sangre_rh: string | null;
+  placa_vehiculo: string | null;
+  empresa_o_destino: string;
+  motivo_ingreso: string;
+  es_sospechoso_alerta: boolean;
+  estado_acceso: EstadoAccesoGarita;
+  fecha_ingreso: string;
+  fecha_salida: string | null;
+  observaciones: string | null;
+}
+
+// ============================================================================
+// FASE 10: LIBRO BALÍSTICO DIGITAL Y TRAZABILIDAD DCCA INDUMIL
+// ============================================================================
+export interface SemaforoSalvoconducto {
+  dotacion_id: number;
+  puesto_id: number;
+  nombre_puesto: string;
+  tipo_arma: string;
+  serial_arma: string;
+  numero_salvoconducto_indumil: string;
+  tipo_salvoconducto: string;
+  fecha_vencimiento_salvoconducto: string;
+  dias_restantes: number;
+  estado_semaforo: "VIGENTE_VERDE" | "PREVENTIVO_AMARILLO" | "CRITICO_ROJO" | "VENCIDO";
+  requiere_tramite_dcca: boolean;
+  cantidad_municion_actual: number;
+}
+
+export interface MovimientoBalistico {
+  movimiento_id: number;
+  puesto_id: number;
+  nombre_puesto: string;
+  dotacion_id: number;
+  tipo_arma: string;
+  serial_arma: string;
+  operador_responsable_id: number;
+  nombre_operador: string;
+  tipo_movimiento: TipoMovimientoBalistico;
+  calibre: string;
+  cantidad_municion_afectada: number;
+  saldo_municion_resultante: number;
+  justificacion_novedad: string;
+  numero_oficio_dcca: string | null;
+  firma_digital_sha256: string;
+  fecha_movimiento: string;
+}
+
+export interface SolicitudRegistrarMovimientoBalistico {
+  puesto_id: number;
+  dotacion_id: number;
+  tipo_movimiento: TipoMovimientoBalistico;
+  calibre: string;
+  cantidad_municion_afectada: number;
+  justificacion_novedad: string;
+  numero_oficio_dcca?: string;
+}
+
+export interface CertificadoPoligono {
+  certificado_id: number;
+  operador_id: number;
+  nombre_operador: string;
+  academia_seguridad: string;
+  tipo_arma_calificada: string;
+  puntaje_precision: number;
+  aprobado: boolean;
+  fecha_practica: string;
+  fecha_vencimiento_anual: string;
+}
+
+export interface SolicitudRegistrarCertificadoPoligono {
+  operador_id: number;
+  academia_seguridad: string;
+  tipo_arma_calificada: string;
+  puntaje_precision: number;
+  aprobado: boolean;
+  fecha_practica: string;
+}
+
+// ============================================================================
+// FASE 11: CENTRO DE DESPACHO CAD Y MONITOREO GPS EN VIVO
+// ============================================================================
+export interface TelemetriaPuestoMapa {
+  puesto_id: number;
+  nombre_puesto: string;
+  codigo_puesto: string;
+  latitud_gps: number;
+  longitud_gps: number;
+  estado_seguridad: "NORMAL" | "ALERTA_SOS";
+  requiere_armamento: boolean;
+}
+
+export interface TelemetriaSupervisorMapa {
+  supervisor_id: number;
+  nombre_supervisor: string;
+  codigo_placa: string;
+  latitud_actual: number;
+  longitud_actual: number;
+  estado_disponibilidad: "DISPONIBLE" | "EN_DESPACHO";
+}
+
+export interface ResumenMapaTactico {
+  puestos: TelemetriaPuestoMapa[];
+  supervisores: TelemetriaSupervisorMapa[];
+  alertas_sos_activas_conteo: number;
+}
+
+export interface CandidatoSupervisorCercano {
+  supervisor_id: number;
+  nombre_supervisor: string;
+  codigo_placa: string;
+  distancia_km: number;
+  eta_minutos: number;
+  recomendado: boolean;
+}
+
+export interface DespachoPatrulla {
+  despacho_id: number;
+  alerta_sos_id: number;
+  supervisor_id: number;
+  nombre_supervisor: string;
+  codigo_placa_supervisor: string;
+  puesto_id: number;
+  nombre_puesto: string;
+  coordenadas_puesto: [number, number];
+  distancia_km_calculada: number;
+  eta_minutos_estimado: number;
+  estado_despacho: EstadoDespachoPatrulla;
+  fecha_despacho: string;
+  fecha_llegada_sitio: string | null;
+  tiempo_arribo_segundos: number | null;
+  informe_tactico_cierre: string | null;
 }

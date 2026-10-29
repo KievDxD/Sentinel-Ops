@@ -66,3 +66,4 @@ def test_firma_digital_prefactura_sha256_consistente():
 
     assert len(hash_1) == 64
     assert hash_1 == hash_2
+

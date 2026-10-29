@@ -168,3 +168,4 @@ def generar_firma_digital_prefactura(
     """Genera huella SHA-256 de integridad para la prefactura legal B2B."""
     cadena = f"{codigo_factura}:{cliente_id}:{mes_servicio}:{total_cop:.2f}:{fecha_emision.isoformat()}"
     return hashlib.sha256(cadena.encode("utf-8")).hexdigest()
+

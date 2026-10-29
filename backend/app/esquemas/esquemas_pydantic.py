@@ -6,7 +6,9 @@ from datetime import date, datetime
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.modelos.modelos_bd import (
+    EstadoAccesoGarita,
     EstadoAlertaSos,
+    EstadoDespachoPatrulla,
     EstadoFactura,
     EstadoItemDotacion,
     EstadoSolicitudIntercambio,
@@ -15,7 +17,9 @@ from app.modelos.modelos_bd import (
     NivelCursoVigilancia,
     NivelPrioridad,
     RolUsuario,
+    TipoAccesoGarita,
     TipoAusentismo,
+    TipoMovimientoBalistico,
     TipoRegistroMinuta,
     TipoTurno,
     VisibilidadMinuta,
@@ -598,4 +602,175 @@ class RespuestaPrefactura(BaseModel):
     firma_digital_sha256: str
     fecha_emision: datetime
     fecha_vencimiento: date
+
+
+# ============================================================================
+# MÓDULO 9: CONTROL DE ACCESO GARITA Y ESCÁNER CÉDULAS PDF417 (V3.0 FASE 9)
+# ============================================================================
+class SolicitudDecodificarCedula(BaseModel):
+    """Trama cruda del código de barras PDF417 de la cédula colombiana."""
+
+    trama_cruda: str = Field(..., min_length=10)
+
+
+class RespuestaCedulaColombiana(BaseModel):
+    """Datos estructurados obtenidos de la cédula colombiana."""
+
+    documento_identidad: str
+    primer_apellido: str
+    segundo_apellido: str
+    primer_nombre: str
+    segundo_nombre: str
+    nombre_completo: str
+    sexo: str
+    fecha_nacimiento: date | None = None
+    grupo_sanguineo_rh: str
+    es_valido: bool
+    mensaje_validacion: str
+
+
+class SolicitudRegistrarAccesoGarita(BaseModel):
+    """Registro de ingreso de visitante, vehículo o contratista en garita."""
+
+    puesto_id: int
+    tipo_acceso: TipoAccesoGarita = TipoAccesoGarita.PEATONAL_VISITANTE
+    documento_identidad: str = Field(..., min_length=5, max_length=30)
+    nombres: str = Field(..., min_length=2, max_length=100)
+    apellidos: str = Field(..., min_length=2, max_length=100)
+    tipo_sangre_rh: str | None = Field(default=None, max_length=10)
+    placa_vehiculo: str | None = Field(default=None, max_length=15)
+    empresa_o_destino: str = Field(..., min_length=2, max_length=120)
+    motivo_ingreso: str = Field(..., min_length=3, max_length=200)
+    observaciones: str | None = Field(default=None, max_length=500)
+
+
+class RespuestaAccesoGarita(BaseModel):
+    """Representación enriquecida de un evento de acceso a las instalaciones."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    acceso_id: int
+    puesto_id: int
+    nombre_puesto: str
+    operador_id: int
+    nombre_operador: str
+    tipo_acceso: TipoAccesoGarita
+    documento_identidad: str
+    nombres: str
+    apellidos: str
+    nombre_completo: str
+    tipo_sangre_rh: str | None = None
+    placa_vehiculo: str | None = None
+    empresa_o_destino: str
+    motivo_ingreso: str
+    es_sospechoso_alerta: bool
+    estado_acceso: EstadoAccesoGarita
+    fecha_ingreso: datetime
+    fecha_salida: datetime | None = None
+    observaciones: str | None = None
+
+
+# ============================================================================
+# MÓDULO 10: LIBRO BALÍSTICO DIGITAL Y TRAZABILIDAD INDUMIL DCCA (V3.0 FASE 10)
+# ============================================================================
+class SolicitudRegistrarMovimientoBalistico(BaseModel):
+    """Registro de consumo, práctica o reposición de munición y armamento."""
+
+    puesto_id: int
+    dotacion_id: int
+    tipo_movimiento: TipoMovimientoBalistico
+    calibre: str = Field(..., min_length=2, max_length=30)
+    cantidad_municion_afectada: int = Field(..., ge=1, le=100)
+    justificacion_novedad: str = Field(..., min_length=5, max_length=500)
+    numero_oficio_dcca: str | None = Field(default=None, max_length=50)
+
+
+class RespuestaMovimientoBalistico(BaseModel):
+    """Detalle de movimiento en el Libro Balístico oficial."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    movimiento_id: int
+    puesto_id: int
+    nombre_puesto: str
+    dotacion_id: int
+    tipo_arma: str
+    serial_arma: str
+    operador_responsable_id: int
+    nombre_operador: str
+    tipo_movimiento: TipoMovimientoBalistico
+    calibre: str
+    cantidad_municion_afectada: int
+    saldo_municion_resultante: int
+    justificacion_novedad: str
+    numero_oficio_dcca: str | None = None
+    firma_digital_sha256: str
+    fecha_movimiento: datetime
+
+
+class SolicitudRegistrarCertificadoPoligono(BaseModel):
+    """Registro de calificación de tiro reglamentario."""
+
+    operador_id: int
+    academia_seguridad: str = Field(..., min_length=3, max_length=120)
+    tipo_arma_calificada: str = Field(..., min_length=3, max_length=50)
+    puntaje_precision: float = Field(..., ge=0.0, le=100.0)
+    aprobado: bool = True
+    fecha_practica: date
+
+
+class RespuestaCertificadoPoligono(BaseModel):
+    """Detalle del certificado de tiro acreditado."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    certificado_id: int
+    operador_id: int
+    nombre_operador: str
+    academia_seguridad: str
+    tipo_arma_calificada: str
+    puntaje_precision: float
+    aprobado: bool
+    fecha_practica: date
+    fecha_vencimiento_anual: date
+
+
+# ============================================================================
+# MÓDULO 11: CENTRO DE DESPACHO CAD Y MONITOREO GPS EN VIVO (V3.0 FASE 11)
+# ============================================================================
+class SolicitudDespacharPatrulla(BaseModel):
+    """Orden de despacho de una patrulla motorizada hacia una emergencia SOS."""
+
+    alerta_sos_id: int
+    supervisor_id: int
+    nota_despacho: str | None = Field(default=None, max_length=300)
+
+
+class SolicitudCierreDespacho(BaseModel):
+    """Reporte táctico de arribo y cierre de la reacción motorizada."""
+
+    informe_tactico_cierre: str = Field(..., min_length=5, max_length=1000)
+
+
+class RespuestaDespachoPatrulla(BaseModel):
+    """Telemetría y estado de una orden de despacho CAD."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    despacho_id: int
+    alerta_sos_id: int
+    supervisor_id: int
+    nombre_supervisor: str
+    codigo_placa_supervisor: str
+    puesto_id: int
+    nombre_puesto: str
+    coordenadas_puesto: tuple[float, float]
+    distancia_km_calculada: float
+    eta_minutos_estimado: float
+    estado_despacho: EstadoDespachoPatrulla
+    fecha_despacho: datetime
+    fecha_llegada_sitio: datetime | None = None
+    tiempo_arribo_segundos: int | None = None
+    informe_tactico_cierre: str | None = None
+
 

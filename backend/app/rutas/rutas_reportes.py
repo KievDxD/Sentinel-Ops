@@ -260,3 +260,20 @@ async def generar_libro_foliado_minuta_oficial(
 </body>
 </html>"""
     return HTMLResponse(content=documento_html)
+
+
+@enrutador_reportes.get(
+    "/respaldo-forense-cifrado",
+    summary="Descargar Respaldo Forense Criptográfico (Fase 12 - Exclusivo ADMINISTRADOR)",
+)
+async def descargar_respaldo_forense(
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(RolUsuario.ADMINISTRADOR)
+    ),
+    sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
+) -> dict:
+    """Retorna volcado forense JSON estructurado con firma digital SHA-256."""
+    from app.servicios.respaldo_forense import generar_paquete_respaldo_forense
+
+    return await generar_paquete_respaldo_forense(sesion_bd)
+

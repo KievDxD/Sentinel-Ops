@@ -1,10 +1,43 @@
-# SENTINEL // OPS (Release Enterprise V2.0) — Plataforma SaaS B2B para Empresas de Seguridad Privada en Colombia
+# SENTINEL // OPS (Release Enterprise V3.0) — Plataforma SaaS B2B para Empresas de Seguridad Privada en Colombia
 
-Plataforma empresarial de nivel de producción diseñada para gestionar la operación táctica, armamento Indumil, credenciales SuperVigilancia, turnos rotativos 2x2 de 12 horas, minuta digital con visibilidad dual, alertas de pánico SOS en tiempo real, rondas QR/GPS con soporte Offline-First y prenómina laboral conforme a la legislación colombiana (**SuperVigilancia**, **Ley 1920 de 2018**, **Ley 2101 de 2021** de reducción de jornada a 42 horas semanales en 2026 y **Código Sustantivo del Trabajo**).
+Plataforma empresarial integral de nivel de producción diseñada para gestionar la operación táctica, armamento Indumil, credenciales SuperVigilancia, turnos rotativos 2x2 de 12 horas, minuta digital con visibilidad dual, alertas de pánico SOS en tiempo real, rondas QR/GPS con soporte Offline-First, tarificación legal SuperVigilancia con facturación B2B, escáner de cédulas PDF417 en garita, libro balístico digital DCCA Indumil, centro de despacho asistido por computadora (CAD) con radar GPS y arquitectura SaaS Multi-Tenant conforme a la legislación colombiana (**Superintendencia de Vigilancia y Seguridad Privada**, **Ley 1920 de 2018**, **Ley 2101 de 2021** de reducción de jornada a 42 horas semanales, **Decreto 2535/1993**, **Art. 462-1 E.T. DIAN** y **Código Sustantivo del Trabajo**).
 
 ---
 
-## 1. Arquitectura Normativa y Módulos Enterprise V2.0
+## 1. Módulos Operativos y Regulatorios Enterprise V3.0
+
+### 1.1. Tarificación Legal SuperVigilancia & Facturación B2B (Fase 8)
+- **Motor de Tarifas Mínimas Reguladas:** Computa el piso legal mensual por puesto 24/7 (cuadrilla de 4 guardas rotando 2x2 sin exceder la jornada máxima de 42h/semana Ley 2101).
+- **Rubros de Ley:** SMLMV + Auxilio de transporte + Factor Prestacional (Cesantías, Prima, Vacaciones 21.83%) + Seguridad Social y Parafiscales (Salud, Pensión, ARL Riesgo V 4.35%, CCF 28.85%) + Dotación y Seguro Colectivo de Vida Ley 1920.
+- **Recargo por Armamento Indumil:** 10% adicional regulado sobre el componente de mano de obra en puestos armados.
+- **AIU e IVA DIAN:** Margen de Administración e Intermediación regulado (mínimo 10%) e IVA especial del 19% sobre la base de AIU (Art. 462-1 Estatuto Tributario).
+- **Prefacturación B2B Foliada:** Generador de prefacturas oficiales con firma criptográfica inmutable SHA-256 y vista HTML lista para imprimir o exportar a PDF.
+
+### 1.2. Control de Acceso en Garita & Escáner de Cédulas PDF417 (Fase 9)
+- **Decodificador Nativo PDF417:** Lee la trama alfanumérica bidimensional del reverso de la cédula de ciudadanía colombiana (estándar Registraduría Nacional).
+- **Extracción Inmediata:** Extrae documento de identidad, primer apellido, segundo apellido, primer nombre, segundo nombre, sexo, fecha de nacimiento y factor RH/grupo sanguíneo.
+- **Gestión de Garita:** Registro de ingresos peatonales y vehiculares (placa), empresa/oficina de destino, motivo y salida con 1 clic.
+- **PWA Offline-Ready:** Soporte para funcionamiento en garitas remotas sin conectividad (`manifest.json` y sincronización local).
+
+### 1.3. Libro Balístico Digital & Trazabilidad Indumil DCCA (Fase 10)
+- **Semáforo Preventivo de Salvoconductos:** Diagnóstico anticipado de vencimientos ante el Departamento de Control Comercio de Armas (DCCA):
+  - `Verde`: > 90 días de vigencia.
+  - `Amarillo Preventivo`: 30 a 90 días.
+  - `Rojo Crítico`: < 30 días (alerta inmediata para trámite de renovación).
+  - `Vencido`: Trámite urgente y bloqueo automático de asignación de arma.
+- **Kardex Inmutable de Munición:** Registro de consumo por incidentes, pruebas de polígono y reposiciones con saldo dinámico y firma SHA-256.
+- **Acreditación de Pruebas de Tiro:** Registro de certificados de polígono expedidos por academias de seguridad acreditadas con vigencia anual reglamentaria (365 días).
+
+### 1.4. Centro de Despacho CAD & Monitoreo GPS de Patrullas en Vivo (Fase 11)
+- **Radar Táctico Cartográfico:** Visualización satelital en tiempo real de puestos fijos y patrullas motorizadas con telemetría GPS.
+- **Detección Automática de Proximidad:** Al dispararse un botón de pánico SOS, el motor calcula la distancia geodésica Haversine de todos los supervisores y ordena por cercanía.
+- **Cálculo de ETA en Minutos:** Tiempo estimado de arribo calculado en base a velocidad urbana motorizada de emergencia.
+- **Flujo de Reacción Certificada:** Despacho formal de la unidad $\rightarrow$ Registro de arribo en sitio con cronómetro en segundos $\rightarrow$ Informe táctico de cierre del incidente.
+
+### 1.5. Arquitectura SaaS Multi-Empresa & Despliegue Cloud (Fase 12)
+- **Soporte Multi-Tenant:** Segregación de información por empresa de seguridad privada (`tenant_id`).
+- **Respaldo Forense Criptográfico:** Endpoint `/api/reportes/respaldo-forense-cifrado` que consolida minutas, actas, kardex balístico y facturación en un paquete JSON con sello maestro SHA-256 para auditoría de la SuperVigilancia.
+- **Despliegue Cloud:** `Dockerfile` multi-stage para producción (frontend Vite + backend FastAPI Uvicorn) listo para Google Cloud Run, AWS ECS o Docker Compose.
 
 ### 1.1. Motor Inteligente de Turnos 2x2 (12h) y Nómina Ley 2101 (42 Horas Semanales)
 - **Ciclo Rotativo 2x2 (6 Días):** `2 Días (06:00-18:00) → 2 Noches (18:00-06:00) → 2 Descansos Compensatorios (24h Libres)`.
@@ -90,9 +123,10 @@ npm --prefix frontend run build
 
 ---
 
-## 5. Roadmap de Evolución Futura (Release V3.0)
-- **Fase 8:** Tarificación Mínima Legal SuperVigilancia (SMLMV + factor prestacional) y facturación electrónica B2B.
-- **Fase 9:** PWA móvil táctica con escaneo de código de barras de cédulas colombianas (PDF417) y notificaciones Web Push SOS.
-- **Fase 10:** Telemetría balística Indumil y semáforo preventivo de salvoconductos.
-- **Fase 11:** Centro de despacho y monitoreo GPS en vivo de patrullas motorizadas con mapas interactivos.
-- **Fase 12:** Arquitectura Cloud Multi-Tenant (`tenant_id`) y alta disponibilidad en contenedores Docker/K8s.
+## 5. Estado de Ejecución y Cobertura Integral (Release V3.0)
+- [x] **Fase 1 a 7:** Autenticación RBAC 5 Niveles, Turnos 2x2, Minuta WebSockets, Relevos Indumil, Rondas QR/GPS y Prenómina Ley 2101 (42h).
+- [x] **Fase 8:** Tarificación Mínima Legal SuperVigilancia (SMLMV + factor prestacional) y facturación electrónica B2B con firma SHA-256.
+- [x] **Fase 9:** PWA móvil táctica con escaneo de código de barras de cédulas colombianas (PDF417) y control de garita en tiempo real.
+- [x] **Fase 10:** Libro Balístico Digital DCCA Indumil, semáforo preventivo de salvoconductos y certificados anuales de tiro.
+- [x] **Fase 11:** Centro de Despacho Táctico Asistido por Computadora (CAD) con radar GPS y algoritmo geodésico Haversine.
+- [x] **Fase 12:** Arquitectura Cloud Multi-Tenant (`tenant_id`), volcado forense criptográfico y Dockerfile multi-stage de producción.

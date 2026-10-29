@@ -560,3 +560,4 @@ export function ModuloTarificadorB2B(): React.ReactElement {
     </div>
   );
 }
+

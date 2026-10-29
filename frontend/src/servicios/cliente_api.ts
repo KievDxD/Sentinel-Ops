@@ -43,6 +43,17 @@ import type {
   RespuestaDesgloseCotizacion,
   SolicitudGenerarPrefactura,
   PrefacturaB2B,
+  DatosCedulaColombiana,
+  SolicitudRegistrarAccesoGarita,
+  RegistroAccesoGarita,
+  SemaforoSalvoconducto,
+  MovimientoBalistico,
+  SolicitudRegistrarMovimientoBalistico,
+  CertificadoPoligono,
+  SolicitudRegistrarCertificadoPoligono,
+  ResumenMapaTactico,
+  CandidatoSupervisorCercano,
+  DespachoPatrulla,
   TurnoOperativo,
   UsuarioSistema,
 } from "../tipos/tipos_sistema";
@@ -501,4 +512,160 @@ export async function servicioAbrirPrefacturaHtml(prefacturaId: number): Promise
     nuevaVentana.document.write(respuesta.data);
     nuevaVentana.document.close();
   }
+}
+
+// ============================================================================
+// FASE 9: CONTROL DE ACCESO GARITA Y ESCÁNER PDF417
+// ============================================================================
+export async function servicioDecodificarCedula(
+  tramaCruda: string
+): Promise<DatosCedulaColombiana> {
+  const respuesta = await clienteApi.post<DatosCedulaColombiana>(
+    "/api/acceso/decodificar-cedula",
+    { trama_cruda: tramaCruda }
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarIngresoGarita(
+  datos: SolicitudRegistrarAccesoGarita
+): Promise<RegistroAccesoGarita> {
+  const respuesta = await clienteApi.post<RegistroAccesoGarita>(
+    "/api/acceso/ingreso",
+    datos
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarSalidaGarita(
+  accesoId: number
+): Promise<RegistroAccesoGarita> {
+  const respuesta = await clienteApi.patch<RegistroAccesoGarita>(
+    `/api/acceso/${accesoId}/salida`
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarActivosEnPuesto(
+  puestoId: number
+): Promise<RegistroAccesoGarita[]> {
+  const respuesta = await clienteApi.get<RegistroAccesoGarita[]>(
+    `/api/acceso/puesto/${puestoId}/activos`
+  );
+  return respuesta.data;
+}
+
+export async function servicioConsultarHistorialAccesos(
+  puestoId?: number
+): Promise<RegistroAccesoGarita[]> {
+  const respuesta = await clienteApi.get<RegistroAccesoGarita[]>(
+    "/api/acceso/historial",
+    { params: puestoId ? { puesto_id: puestoId } : undefined }
+  );
+  return respuesta.data;
+}
+
+// ============================================================================
+// FASE 10: LIBRO BALÍSTICO DIGITAL Y TRAZABILIDAD INDUMIL DCCA
+// ============================================================================
+export async function servicioConsultarSemaforoSalvoconductos(): Promise<
+  SemaforoSalvoconducto[]
+> {
+  const respuesta = await clienteApi.get<SemaforoSalvoconducto[]>(
+    "/api/balistica/salvoconductos-semaforo"
+  );
+  return respuesta.data;
+}
+
+export async function servicioConsultarKardexBalistico(
+  puestoId: number
+): Promise<MovimientoBalistico[]> {
+  const respuesta = await clienteApi.get<MovimientoBalistico[]>(
+    `/api/balistica/kardex/${puestoId}`
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarMovimientoBalistico(
+  datos: SolicitudRegistrarMovimientoBalistico
+): Promise<MovimientoBalistico> {
+  const respuesta = await clienteApi.post<MovimientoBalistico>(
+    "/api/balistica/kardex/movimiento",
+    datos
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarCertificadosPoligono(): Promise<
+  CertificadoPoligono[]
+> {
+  const respuesta = await clienteApi.get<CertificadoPoligono[]>(
+    "/api/balistica/poligonos"
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarCertificadoPoligono(
+  datos: SolicitudRegistrarCertificadoPoligono
+): Promise<CertificadoPoligono> {
+  const respuesta = await clienteApi.post<CertificadoPoligono>(
+    "/api/balistica/poligonos",
+    datos
+  );
+  return respuesta.data;
+}
+
+// ============================================================================
+// FASE 11: CENTRO DE DESPACHO CAD Y MONITOREO GPS EN VIVO
+// ============================================================================
+export async function servicioObtenerTelemetriaMapa(): Promise<ResumenMapaTactico> {
+  const respuesta = await clienteApi.get<ResumenMapaTactico>(
+    "/api/cad/telemetria-mapa"
+  );
+  return respuesta.data;
+}
+
+export async function servicioSugerirPatrullaCercana(
+  alertaSosId: number
+): Promise<CandidatoSupervisorCercano[]> {
+  const respuesta = await clienteApi.get<CandidatoSupervisorCercano[]>(
+    `/api/cad/sugerir-patrulla/${alertaSosId}`
+  );
+  return respuesta.data;
+}
+
+export async function servicioDespacharPatrulla(
+  alertaSosId: number,
+  supervisorId: number,
+  notaDespacho?: string
+): Promise<DespachoPatrulla> {
+  const respuesta = await clienteApi.post<DespachoPatrulla>(
+    "/api/cad/despachar",
+    {
+      alerta_sos_id: alertaSosId,
+      supervisor_id: supervisorId,
+      nota_despacho: notaDespacho,
+    }
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarLlegadaPatrulla(
+  despachoId: number
+): Promise<DespachoPatrulla> {
+  const respuesta = await clienteApi.patch<DespachoPatrulla>(
+    `/api/cad/despacho/${despachoId}/llegada`
+  );
+  return respuesta.data;
+}
+
+export async function servicioFinalizarDespachoCad(
+  despachoId: number,
+  informeTacticoCierre: string
+): Promise<DespachoPatrulla> {
+  const respuesta = await clienteApi.patch<DespachoPatrulla>(
+    `/api/cad/despacho/${despachoId}/finalizar`,
+    { informe_tactico_cierre: informeTacticoCierre }
+  );
+  return respuesta.data;
 }

@@ -532,3 +532,4 @@ async def ver_prefactura_foliada_html(
 </html>"""
 
     return HTMLResponse(content=html, status_code=status.HTTP_200_OK)
+

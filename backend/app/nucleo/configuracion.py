@@ -9,8 +9,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class ConfiguracionSistema(BaseSettings):
     """Parámetros de configuración del entorno de ejecución del servidor."""
 
-    nombre_proyecto: str = "SENTINEL // OPS - API Central"
-    version_api: str = "1.0.0"
+    nombre_proyecto: str = "SENTINEL // OPS - API Central Enterprise V3.0"
+    version_api: str = "3.0.0"
+
+    # Soporte Multi-Tenant SaaS (Fase 12)
+    modo_multi_tenant: bool = True
+    tenant_id_predeterminado: str = "EMPRESA-SEGURIDAD-COLOMBIA-01"
 
     # Conexión principal a PostgreSQL 15 definida en docker-compose.yml
     url_base_datos_postgres: str = (

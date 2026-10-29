@@ -143,6 +143,42 @@ class EstadoFactura(str, Enum):
     ANULADA = "ANULADA"
 
 
+class TipoAccesoGarita(str, Enum):
+    """Tipos de ingreso controlado en garita y recepción."""
+
+    PEATONAL_VISITANTE = "PEATONAL_VISITANTE"
+    VEHICULAR = "VEHICULAR"
+    CONTRATISTA = "CONTRATISTA"
+    EMPLEADO = "EMPLEADO"
+
+
+class EstadoAccesoGarita(str, Enum):
+    """Estado de permanencia en las instalaciones."""
+
+    DENTRO = "DENTRO"
+    SALIO = "SALIO"
+
+
+class TipoMovimientoBalistico(str, Enum):
+    """Categorías de control balístico y munición reglamentadas por DCCA Indumil."""
+
+    DOTACION_INICIAL = "DOTACION_INICIAL"
+    CONSUMO_INCIDENTE = "CONSUMO_INCIDENTE"
+    PRACTICA_POLIGONO = "PRACTICA_POLIGONO"
+    MANTENIMIENTO_ARMERIA = "MANTENIMIENTO_ARMERIA"
+    REPOSICION_INDUMIL = "REPOSICION_INDUMIL"
+
+
+class EstadoDespachoPatrulla(str, Enum):
+    """Fases operativas de la unidad motorizada despachada por el CAD."""
+
+    PENDIENTE = "PENDIENTE"
+    EN_RUTA = "EN_RUTA"
+    EN_SITIO = "EN_SITIO"
+    FINALIZADO = "FINALIZADO"
+    CANCELADO = "CANCELADO"
+
+
 class ModeloUsuario(BaseModeloDeclarativo):
     """Tabla `usuarios` que almacena los 5 roles RBAC y sus credenciales SuperVigilancia."""
 
@@ -669,5 +705,172 @@ class ModeloPrefactura(BaseModeloDeclarativo):
 
     cliente: Mapped["ModeloUsuario"] = relationship("ModeloUsuario", foreign_keys=[cliente_id])
     puesto_vigilancia: Mapped["ModeloPuestoVigilancia | None"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+
+
+class ModeloRegistroAccesoGarita(BaseModeloDeclarativo):
+    """
+    Tabla `accesos_garita` (V3.0 Fase 9): Control de acceso con escaneo PDF417 de cédulas.
+    """
+
+    __tablename__ = "accesos_garita"
+
+    acceso_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
+    )
+    operador_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    tipo_acceso: Mapped[TipoAccesoGarita] = mapped_column(
+        SqlEnum(TipoAccesoGarita, name="enum_tipo_acceso_garita"),
+        default=TipoAccesoGarita.PEATONAL_VISITANTE,
+        nullable=False,
+    )
+    documento_identidad: Mapped[str] = mapped_column(
+        String(30), index=True, nullable=False
+    )
+    nombres: Mapped[str] = mapped_column(String(100), nullable=False)
+    apellidos: Mapped[str] = mapped_column(String(100), nullable=False)
+    tipo_sangre_rh: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    placa_vehiculo: Mapped[str | None] = mapped_column(String(15), nullable=True)
+    empresa_o_destino: Mapped[str] = mapped_column(String(120), nullable=False)
+    motivo_ingreso: Mapped[str] = mapped_column(String(200), nullable=False)
+    es_sospechoso_alerta: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    estado_acceso: Mapped[EstadoAccesoGarita] = mapped_column(
+        SqlEnum(EstadoAccesoGarita, name="enum_estado_acceso_garita"),
+        default=EstadoAccesoGarita.DENTRO,
+        nullable=False,
+    )
+    fecha_ingreso: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+    fecha_salida: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    observaciones: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+    operador: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[operador_id]
+    )
+
+
+class ModeloKardexBalistico(BaseModeloDeclarativo):
+    """
+    Tabla `kardex_balistico` (V3.0 Fase 10): Libro balístico oficial y trazabilidad Indumil DCCA.
+    """
+
+    __tablename__ = "kardex_balistico"
+
+    movimiento_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
+    )
+    dotacion_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("dotaciones_puestos.dotacion_id"), index=True, nullable=False
+    )
+    operador_responsable_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    tipo_movimiento: Mapped[TipoMovimientoBalistico] = mapped_column(
+        SqlEnum(TipoMovimientoBalistico, name="enum_tipo_movimiento_balistico"),
+        nullable=False,
+    )
+    calibre: Mapped[str] = mapped_column(String(30), nullable=False)
+    cantidad_municion_afectada: Mapped[int] = mapped_column(Integer, nullable=False)
+    saldo_municion_resultante: Mapped[int] = mapped_column(Integer, nullable=False)
+    justificacion_novedad: Mapped[str] = mapped_column(Text, nullable=False)
+    numero_oficio_dcca: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    firma_digital_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    fecha_movimiento: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+    dotacion: Mapped["ModeloDotacionPuesto"] = relationship(
+        "ModeloDotacionPuesto", foreign_keys=[dotacion_id]
+    )
+    operador: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[operador_responsable_id]
+    )
+
+
+class ModeloCertificadoPoligono(BaseModeloDeclarativo):
+    """
+    Tabla `certificados_poligono` (V3.0 Fase 10): Pruebas de tiro y reentrenamiento anual Indumil/SuperVigilancia.
+    """
+
+    __tablename__ = "certificados_poligono"
+
+    certificado_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    operador_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    academia_seguridad: Mapped[str] = mapped_column(String(120), nullable=False)
+    tipo_arma_calificada: Mapped[str] = mapped_column(String(50), nullable=False)
+    puntaje_precision: Mapped[float] = mapped_column(Float, nullable=False)
+    aprobado: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    fecha_practica: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha_vencimiento_anual: Mapped[date] = mapped_column(Date, nullable=False)
+
+    operador: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[operador_id]
+    )
+
+
+class ModeloDespachoPatrulla(BaseModeloDeclarativo):
+    """
+    Tabla `despachos_patrulla` (V3.0 Fase 11): Consola CAD de despacho táctico asistido para motorizados.
+    """
+
+    __tablename__ = "despachos_patrulla"
+
+    despacho_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    alerta_sos_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("alertas_panico_sos.alerta_id"), index=True, nullable=False
+    )
+    supervisor_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
+    )
+    distancia_km_calculada: Mapped[float] = mapped_column(Float, nullable=False)
+    eta_minutos_estimado: Mapped[float] = mapped_column(Float, nullable=False)
+    estado_despacho: Mapped[EstadoDespachoPatrulla] = mapped_column(
+        SqlEnum(EstadoDespachoPatrulla, name="enum_estado_despacho_patrulla"),
+        default=EstadoDespachoPatrulla.EN_RUTA,
+        nullable=False,
+    )
+    fecha_despacho: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+    fecha_llegada_sitio: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    tiempo_arribo_segundos: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    informe_tactico_cierre: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    alerta_sos: Mapped["ModeloAlertaPanicoSos"] = relationship(
+        "ModeloAlertaPanicoSos", foreign_keys=[alerta_sos_id]
+    )
+    supervisor: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[supervisor_id]
+    )
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
         "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
     )

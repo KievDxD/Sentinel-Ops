@@ -33,6 +33,9 @@ import {
   CheckCircle2,
   MapPin,
   Calculator,
+  UserCheck,
+  Crosshair,
+  Navigation,
 } from "lucide-react";
 import { format } from "date-fns";
 import { usarAlmacenAutenticacion } from "./estado/almacen_autenticacion";
@@ -59,6 +62,9 @@ import { ModuloIntercambioTurnos } from "./componentes/ModuloIntercambioTurnos";
 import { ModuloPersonalYPuestos } from "./componentes/ModuloPersonalYPuestos";
 import { ModuloRondasYReportes } from "./componentes/ModuloRondasYReportes";
 import { ModuloTarificadorB2B } from "./componentes/ModuloTarificadorB2B";
+import { ModuloControlAccesoGarita } from "./componentes/ModuloControlAccesoGarita";
+import { ModuloLibroBalistico } from "./componentes/ModuloLibroBalistico";
+import { ModuloDespachoCAD } from "./componentes/ModuloDespachoCAD";
 
 interface CuentaRapida {
   etiqueta: string;
@@ -533,6 +539,61 @@ export function App(): ReactElement {
                     : "Tarificación SV & Facturas"}
                 </span>
               </NavLink>
+
+              <NavLink
+                to="/acceso-garita"
+                className={({ isActive }): string =>
+                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    isActive
+                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  }`
+                }
+              >
+                <UserCheck className="h-4 w-4 shrink-0" />
+                <span>
+                  {usuarioActual.rol === "OPERADOR"
+                    ? "Garita & Cédulas PDF417"
+                    : "Acceso Garita & Cédulas"}
+                </span>
+              </NavLink>
+
+              {usuarioActual.rol !== "OPERADOR" && (
+                <NavLink
+                  to="/libro-balistico"
+                  className={({ isActive }): string =>
+                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                      isActive
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                >
+                  <Crosshair className="h-4 w-4 shrink-0" />
+                  <span>
+                    {usuarioActual.rol === "CLIENTE"
+                      ? "Armas & Salvoconductos Puesto"
+                      : "Libro Balístico & Indumil"}
+                  </span>
+                </NavLink>
+              )}
+
+              {(usuarioActual.rol === "ADMINISTRADOR" ||
+                usuarioActual.rol === "SUPERVISOR") && (
+                <NavLink
+                  to="/despacho-cad"
+                  className={({ isActive }): string =>
+                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                      isActive
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                >
+                  <Navigation className="h-4 w-4 shrink-0" />
+                  <span>Despacho CAD & GPS Radar</span>
+                </NavLink>
+              )}
             </nav>
           </div>
 
@@ -785,6 +846,18 @@ export function App(): ReactElement {
               <Route
                 path="/facturacion-b2b"
                 element={<ModuloTarificadorB2B />}
+              />
+              <Route
+                path="/acceso-garita"
+                element={<ModuloControlAccesoGarita />}
+              />
+              <Route
+                path="/libro-balistico"
+                element={<ModuloLibroBalistico />}
+              />
+              <Route
+                path="/despacho-cad"
+                element={<ModuloDespachoCAD />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
