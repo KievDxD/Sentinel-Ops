@@ -6,6 +6,7 @@ Puesto con Armamento Indumil (SHA-256) y Botón de Pánico Táctico SOS en Tiemp
 
 from datetime import datetime, timezone
 import hashlib
+import html
 
 from fastapi import (
     APIRouter,
@@ -16,6 +17,7 @@ from fastapi import (
     WebSocketDisconnect,
     status,
 )
+from fastapi.responses import HTMLResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -462,6 +464,225 @@ async def crear_acta_relevo_puesto(
         alerta_disparada=nueva_acta.alerta_disparada,
         fecha_acta=nueva_acta.fecha_acta,
     )
+
+
+@enrutador_minuta.get(
+    "/actas-relevo/{acta_id}/html",
+    response_class=HTMLResponse,
+    summary="Generar Versión Oficial Imprimible Foliada del Acta de Relevo (SHA-256)",
+)
+async def ver_acta_relevo_html(
+    acta_id: int,
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.OPERADOR,
+            RolUsuario.CLIENTE,
+        )
+    ),
+    sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
+) -> HTMLResponse:
+    """Genera la vista oficial foliada HTML para impresión o guardado PDF del acta de relevo."""
+    consulta = select(ModeloActaRelevoPuesto).where(
+        ModeloActaRelevoPuesto.acta_id == acta_id
+    )
+    acta = (await sesion_bd.execute(consulta)).scalar_one_or_none()
+    if not acta:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Acta de relevo #{acta_id} no encontrada.",
+        )
+
+    # Hardening: Restricción multi-tenant para rol CLIENTE
+    if _usuario_actual.rol == RolUsuario.CLIENTE and _usuario_actual.puesto_base_id:
+        if acta.puesto_id != _usuario_actual.puesto_base_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene autorización para visualizar actas de relevo de otras sedes.",
+            )
+
+    puesto = (
+        await sesion_bd.execute(
+            select(ModeloPuestoVigilancia).where(
+                ModeloPuestoVigilancia.puesto_id == acta.puesto_id
+            )
+        )
+    ).scalar_one_or_none()
+
+    dotacion = (
+        await sesion_bd.execute(
+            select(ModeloDotacionPuesto).where(
+                ModeloDotacionPuesto.puesto_id == acta.puesto_id
+            )
+        )
+    ).scalar_one_or_none()
+
+    op_saliente = (
+        await sesion_bd.execute(
+            select(ModeloUsuario).where(
+                ModeloUsuario.usuario_id == acta.operador_saliente_id
+            )
+        )
+    ).scalar_one_or_none()
+
+    op_entrante = None
+    if acta.operador_entrante_id:
+        op_entrante = (
+            await sesion_bd.execute(
+                select(ModeloUsuario).where(
+                    ModeloUsuario.usuario_id == acta.operador_entrante_id
+                )
+            )
+        ).scalar_one_or_none()
+
+    nombre_puesto = html.escape(puesto.nombre_puesto if puesto else "PUESTO NO DEFINIDO")
+    codigo_puesto = html.escape(puesto.codigo_puesto if puesto else "PST-000")
+    saliente_str = html.escape(op_saliente.nombre_completo if op_saliente else "Operador Saliente")
+    saliente_ced = html.escape(op_saliente.documento_identidad if op_saliente else "S/N")
+    saliente_placa = html.escape(op_saliente.codigo_placa if op_saliente else "S/N")
+    entrante_str = html.escape(op_entrante.nombre_completo if op_entrante else "Operador Entrante")
+    entrante_ced = html.escape(op_entrante.documento_identidad if op_entrante else "S/N")
+    entrante_placa = html.escape(op_entrante.codigo_placa if op_entrante else "S/N")
+
+    arma_desc = html.escape(dotacion.tipo_arma if dotacion else "SIN ASIGNACIÓN")
+    arma_serial = html.escape(dotacion.serial_arma if dotacion else "N/A")
+    salvoconducto = html.escape(dotacion.numero_salvoconducto_indumil if dotacion else "N/A")
+    municion_esperada = dotacion.cantidad_municion_autorizada if dotacion else 0
+    obs_escapadas = (
+        html.escape(acta.observaciones_relevo)
+        if acta.observaciones_relevo
+        else "Sin novedades operativas manifestadas en la entrega de turno."
+    )
+
+    estado_alerta_banner = (
+        "<div style='background:#fee2e2;border:2px solid #ef4444;color:#991b1b;padding:12px;border-radius:6px;font-weight:bold;margin:15px 0;text-align:center;'>⚠️ ACTA CON NOVEDAD CRÍTICA O FALTANTE DE ARMAMENTO / MUNICIÓN DISPARADA</div>"
+        if acta.alerta_disparada
+        else "<div style='background:#f0fdf4;border:2px solid #22c55e;color:#166534;padding:12px;border-radius:6px;font-weight:bold;margin:15px 0;text-align:center;'>✓ ENTREGA Y RECEPCIÓN CONFORME A PROTOCOLO SUPERVIGILANCIA</div>"
+    )
+
+    html_contenido = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Acta Oficial de Relevo #{acta.acta_id} - {codigo_puesto}</title>
+    <style>
+        body {{ font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 40px; color: #1e293b; background: #fff; }}
+        .header {{ border-bottom: 3px solid #0284c7; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }}
+        .logo-title {{ font-size: 24px; font-weight: 800; color: #0f172a; letter-spacing: 0.05em; }}
+        .badge {{ background: #0284c7; color: white; padding: 4px 10px; border-radius: 4px; font-size: 13px; font-weight: bold; }}
+        .meta-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }}
+        .meta-box {{ background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 6px; }}
+        .meta-label {{ font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 700; }}
+        .meta-val {{ font-size: 14px; font-weight: 600; color: #0f172a; margin-top: 2px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 25px; }}
+        th, td {{ border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 13px; }}
+        th {{ background: #f1f5f9; font-weight: bold; color: #334155; }}
+        .firmas-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 50px; page-break-inside: avoid; }}
+        .firma-box {{ border-top: 2px dashed #94a3b8; padding-top: 10px; text-align: center; }}
+        .sello-cripto {{ margin-top: 35px; padding: 12px; background: #f1f5f9; border: 1px solid #cbd5e1; font-family: monospace; font-size: 11px; word-break: break-all; border-radius: 4px; }}
+        @media print {{
+            body {{ margin: 15mm; }}
+            .no-print {{ display: none; }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="no-print" style="margin-bottom:20px;text-align:right;">
+        <button onclick="window.print()" style="background:#0284c7;color:#fff;border:none;padding:10px 20px;font-weight:bold;border-radius:6px;cursor:pointer;">🖨️ Imprimir / Guardar PDF</button>
+    </div>
+    <div class="header">
+        <div>
+            <div class="logo-title">SENTINEL // OPS</div>
+            <div style="font-size:12px;color:#64748b;">SUPERINTENDENCIA DE VIGILANCIA Y SEGURIDAD PRIVADA — ACTA OFICIAL DE RELEVO</div>
+        </div>
+        <div>
+            <span class="badge">ACTA FOLIADA #{acta.acta_id}</span>
+        </div>
+    </div>
+
+    {estado_alerta_banner}
+
+    <div class="meta-grid">
+        <div class="meta-box">
+            <div class="meta-label">Puesto de Vigilancia</div>
+            <div class="meta-val">{nombre_puesto} ({codigo_puesto})</div>
+        </div>
+        <div class="meta-box">
+            <div class="meta-label">Fecha y Hora de Relevo (UTC)</div>
+            <div class="meta-val">{acta.fecha_acta.strftime('%Y-%m-%d %H:%M:%S')}</div>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom:8px;color:#0f172a;">1. Verificación e Inventario Táctico de Dotación</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Elemento Táctico</th>
+                <th>Serial / Identificación</th>
+                <th>Estado Físico Reportado</th>
+                <th>Observación Legal</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Armamento Indumil</strong></td>
+                <td>{arma_desc} - Serial: {arma_serial}</td>
+                <td><span style="font-weight:bold;color:{'#16a34a' if acta.estado_armamento == EstadoItemDotacion.OPTIMO else '#dc2626'}">{acta.estado_armamento.value}</span></td>
+                <td>Salvoconducto DCCA: {salvoconducto}</td>
+            </tr>
+            <tr>
+                <td><strong>Munición Reglamentaria</strong></td>
+                <td>Verificados: {acta.municion_verificada} de {municion_esperada}</td>
+                <td><span style="font-weight:bold;color:{'#16a34a' if acta.municion_verificada == municion_esperada else '#dc2626'}">{'COMPLETO' if acta.municion_verificada == municion_esperada else 'DISCREPANCIA'}</span></td>
+                <td>Carga reglamentaria SuperVigilancia</td>
+            </tr>
+            <tr>
+                <td><strong>Chaleco Blindado</strong></td>
+                <td>Dotación Puesto</td>
+                <td><span style="font-weight:bold;color:{'#16a34a' if acta.estado_chaleco == EstadoItemDotacion.OPTIMO else '#dc2626'}">{acta.estado_chaleco.value}</span></td>
+                <td>Nivel balístico certificado</td>
+            </tr>
+            <tr>
+                <td><strong>Radio Transceptor</strong></td>
+                <td>Comunicaciones Red Interna</td>
+                <td><span style="font-weight:bold;color:{'#16a34a' if acta.estado_radio == EstadoItemDotacion.OPTIMO else '#dc2626'}">{acta.estado_radio.value}</span></td>
+                <td>Batería y canal de enlace</td>
+            </tr>
+            <tr>
+                <td><strong>Linterna Táctica y Llaves</strong></td>
+                <td>Aperturas y Minutas Físicas</td>
+                <td><span style="font-weight:bold;color:{'#16a34a' if acta.estado_linterna_y_llaves == EstadoItemDotacion.OPTIMO else '#dc2626'}">{acta.estado_linterna_y_llaves.value}</span></td>
+                <td>Inventario físico verificado</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3 style="margin-bottom:8px;color:#0f172a;">2. Novedades y Observaciones del Relevo</h3>
+    <div style="background:#f8fafc;border:1px solid #cbd5e1;padding:15px;border-radius:6px;font-size:13px;line-height:1.5;">
+        {obs_escapadas}
+    </div>
+
+    <div class="firmas-grid">
+        <div class="firma-box">
+            <div style="font-weight:bold;font-size:14px;color:#0f172a;">{saliente_str}</div>
+            <div style="font-size:12px;color:#475569;">C.C. {saliente_ced} | Placa: {saliente_placa}</div>
+            <div style="font-size:11px;color:#64748b;font-weight:bold;margin-top:4px;">OPERADOR SALIENTE (ENTREGA)</div>
+        </div>
+        <div class="firma-box">
+            <div style="font-weight:bold;font-size:14px;color:#0f172a;">{entrante_str}</div>
+            <div style="font-size:12px;color:#475569;">C.C. {entrante_ced} | Placa: {entrante_placa}</div>
+            <div style="font-size:11px;color:#64748b;font-weight:bold;margin-top:4px;">OPERADOR ENTRANTE (RECIBE)</div>
+        </div>
+    </div>
+
+    <div class="sello-cripto">
+        <strong>SELLO CRIPTOGRÁFICO DE AUDITORÍA FORENSE SHA-256 (INALTERABILIDAD DE MINUTA):</strong><br/>
+        {acta.sello_sha256}
+    </div>
+</body>
+</html>"""
+    return HTMLResponse(content=html_contenido, status_code=status.HTTP_200_OK)
 
 
 # ============================================================================

@@ -13,7 +13,9 @@ from sqlalchemy.orm import selectinload
 from app.esquemas.esquemas_pydantic import (
     RespuestaAccesoGarita,
     RespuestaCedulaColombiana,
+    RespuestaEscanearPlaca,
     SolicitudDecodificarCedula,
+    SolicitudEscanearPlaca,
     SolicitudRegistrarAccesoGarita,
 )
 from app.modelos.modelos_bd import (
@@ -63,6 +65,63 @@ async def decodificar_cedula_endpoint(
         grupo_sanguineo_rh=datos.grupo_sanguineo_rh,
         es_valido=datos.es_valido,
         mensaje_validacion=datos.mensaje_validacion,
+    )
+
+
+@enrutador_acceso.post(
+    "/escanear-placa",
+    response_model=RespuestaEscanearPlaca,
+    summary="Reconocimiento y Normalización OCR de Placas Vehiculares (LPR)",
+)
+async def escanear_placa_vehicular(
+    solicitud: SolicitudEscanearPlaca,
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.OPERADOR,
+        )
+    ),
+) -> RespuestaEscanearPlaca:
+    """Valida y normaliza la placa colombiana capturada por cámara o digitación."""
+    import re
+
+    limpia = re.sub(r"[^A-Za-z0-9]", "", solicitud.texto_placa).upper()
+
+    # Patrón 1: Automóvil particular / público (3 letras + 3 números, ej: ABC123)
+    if re.match(r"^[A-Z]{3}\d{3}$", limpia):
+        normalizada = f"{limpia[:3]}-{limpia[3:]}"
+        return RespuestaEscanearPlaca(
+            placa_normalizada=normalizada,
+            tipo_vehiculo="AUTOMOVIL_PARTICULAR",
+            es_valida=True,
+            mensaje=f"Placa de automóvil colombiana válida: {normalizada}",
+        )
+
+    # Patrón 2: Motocicleta (3 letras + 2 números + 1 letra, ej: ABC12D)
+    if re.match(r"^[A-Z]{3}\d{2}[A-Z]$", limpia):
+        normalizada = f"{limpia[:3]}-{limpia[3:]}"
+        return RespuestaEscanearPlaca(
+            placa_normalizada=normalizada,
+            tipo_vehiculo="MOTOCICLETA",
+            es_valida=True,
+            mensaje=f"Placa de motocicleta colombiana válida: {normalizada}",
+        )
+
+    # Si contiene al menos 5 o 6 caracteres alfanuméricos, devolver normalizada como genérica
+    if len(limpia) >= 5:
+        return RespuestaEscanearPlaca(
+            placa_normalizada=limpia,
+            tipo_vehiculo="VEHICULO_ESPECIAL",
+            es_valida=True,
+            mensaje=f"Matrícula identificada: {limpia}",
+        )
+
+    return RespuestaEscanearPlaca(
+        placa_normalizada=limpia,
+        tipo_vehiculo="DESCONOCIDO",
+        es_valida=False,
+        mensaje="Formato de placa no reconocido para Colombia.",
     )
 
 

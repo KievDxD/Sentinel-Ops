@@ -127,6 +127,22 @@ class AsignarPuestoUsuarioSolicitud(BaseModel):
     puesto_base_id: int | None = None
 
 
+class SolicitudImportarUsuariosCsv(BaseModel):
+    """Carga masiva de personal mediante contenido CSV."""
+
+    contenido_csv: str = Field(..., min_length=10)
+
+
+class RespuestaImportacionUsuariosCsv(BaseModel):
+    """Resumen de resultados tras la importación masiva de usuarios."""
+
+    total_procesados: int
+    creados: int
+    omitidos: int
+    errores: list[str] = Field(default_factory=list)
+    usuarios_creados: list[RespuestaUsuario] = Field(default_factory=list)
+
+
 class RespuestaTokensAutenticacion(BaseModel):
     """Respuesta completa tras autenticación exitosa con JWT Access y Refresh."""
 
@@ -611,6 +627,21 @@ class SolicitudDecodificarCedula(BaseModel):
     """Trama cruda del código de barras PDF417 de la cédula colombiana."""
 
     trama_cruda: str = Field(..., min_length=10)
+
+
+class SolicitudEscanearPlaca(BaseModel):
+    """Texto o lectura capturada por cámara OCR de la placa del vehículo."""
+
+    texto_placa: str = Field(..., min_length=3, max_length=20)
+
+
+class RespuestaEscanearPlaca(BaseModel):
+    """Información normalizada de la matrícula vehicular colombiana."""
+
+    placa_normalizada: str
+    tipo_vehiculo: str
+    es_valida: bool
+    mensaje: str
 
 
 class RespuestaCedulaColombiana(BaseModel):

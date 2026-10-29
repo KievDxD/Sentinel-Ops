@@ -13,13 +13,20 @@ from app.esquemas.esquemas_pydantic import (
     CrearPuestoVigilanciaSolicitud,
     CrearUsuarioSolicitud,
     RegistroUsuarioRealSolicitud,
+    RespuestaImportacionUsuariosCsv,
     RespuestaPuestoVigilancia,
     RespuestaTokensAutenticacion,
     RespuestaUsuario,
+    SolicitudImportarUsuariosCsv,
     SolicitudInicioSesion,
     SolicitudRefrescarToken,
 )
-from app.modelos.modelos_bd import ModeloPuestoVigilancia, ModeloUsuario, RolUsuario
+from app.modelos.modelos_bd import (
+    ModeloPuestoVigilancia,
+    ModeloUsuario,
+    NivelCursoVigilancia,
+    RolUsuario,
+)
 from app.nucleo.base_datos import obtener_sesion_bd
 from app.nucleo.seguridad import (
     crear_token_acceso,
@@ -297,6 +304,134 @@ async def crear_nuevo_usuario(
     await sesion_bd.commit()
     await sesion_bd.refresh(nuevo_usuario)
     return RespuestaUsuario.model_validate(nuevo_usuario)
+
+
+@enrutador_organizacion.post(
+    "/usuarios/importar-csv",
+    response_model=RespuestaImportacionUsuariosCsv,
+    summary="Carga masiva de usuarios y credenciales desde CSV (ADMINISTRADOR o RRHH)",
+)
+async def importar_usuarios_csv(
+    solicitud: SolicitudImportarUsuariosCsv,
+    _autorizado: ModeloUsuario = Depends(
+        requerir_roles(RolUsuario.ADMINISTRADOR, RolUsuario.RRHH)
+    ),
+    sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
+) -> RespuestaImportacionUsuariosCsv:
+    """Importa masivamente personal a la plataforma desde una cadena o archivo CSV."""
+    import csv
+    import io
+    from datetime import datetime
+
+    lineas = solicitud.contenido_csv.strip().splitlines()
+    if not lineas:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El archivo CSV está vacío.",
+        )
+
+    if len(solicitud.contenido_csv) > 2_000_000:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="El contenido CSV supera el límite de seguridad de 2 MB.",
+        )
+
+    if len(lineas) > 1000:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El lote excede el límite máximo permitido de 1,000 registros por importación.",
+        )
+
+    primera_linea = lineas[0]
+    delimitador = ";" if ";" in primera_linea and "," not in primera_linea else ","
+    lector = csv.DictReader(io.StringIO(solicitud.contenido_csv), delimiter=delimitador)
+
+    total = 0
+    creados = 0
+    omitidos = 0
+    errores: list[str] = []
+    usuarios_creados: list[RespuestaUsuario] = []
+
+    for idx, fila in enumerate(lector, start=2):
+        total += 1
+        fila_norm = {
+            str(k).strip().lower(): (str(v).strip() if v else "")
+            for k, v in fila.items()
+            if k is not None
+        }
+
+        doc = fila_norm.get("documento_identidad") or fila_norm.get("documento") or fila_norm.get("cedula")
+        nombre = fila_norm.get("nombre_completo") or fila_norm.get("nombre")
+        correo = fila_norm.get("correo_electronico") or fila_norm.get("correo") or fila_norm.get("email")
+        tel = fila_norm.get("telefono") or "3000000000"
+        rol_str = (fila_norm.get("rol") or "OPERADOR").upper()
+        placa = fila_norm.get("codigo_placa") or fila_norm.get("placa") or f"PL-{doc}"
+        cred_sv = fila_norm.get("numero_credencial_sv") or fila_norm.get("credencial") or None
+        f_venc_str = fila_norm.get("fecha_vencimiento_credencial") or fila_norm.get("vencimiento_credencial") or None
+        curso_str = (fila_norm.get("nivel_curso") or "FUNDAMENTACION").upper()
+
+        if not doc or not nombre or not correo:
+            errores.append(f"Fila {idx}: Faltan campos obligatorios (cédula, nombre o correo).")
+            omitidos += 1
+            continue
+
+        consulta_existente = select(ModeloUsuario).where(
+            (ModeloUsuario.documento_identidad == doc) | (ModeloUsuario.correo_electronico == correo.lower())
+        )
+        existe = (await sesion_bd.execute(consulta_existente)).scalar_one_or_none()
+        if existe:
+            omitidos += 1
+            continue
+
+        try:
+            rol_enum = RolUsuario(rol_str)
+        except ValueError:
+            rol_enum = RolUsuario.OPERADOR
+
+        try:
+            curso_enum = NivelCursoVigilancia(curso_str)
+        except ValueError:
+            curso_enum = NivelCursoVigilancia.FUNDAMENTACION
+
+        fecha_venc = None
+        if f_venc_str:
+            try:
+                fecha_venc = datetime.strptime(f_venc_str, "%Y-%m-%d").date()
+            except ValueError:
+                try:
+                    fecha_venc = datetime.strptime(f_venc_str, "%d/%m/%Y").date()
+                except ValueError:
+                    fecha_venc = None
+
+        nuevo = ModeloUsuario(
+            documento_identidad=doc,
+            nombre_completo=nombre,
+            correo_electronico=correo.lower(),
+            telefono=tel,
+            contrasena_encriptada=encriptar_contrasena("Sentinel2026*"),
+            rol=rol_enum,
+            codigo_placa=placa,
+            puesto_base_id=None,
+            numero_credencial_sv=cred_sv,
+            fecha_vencimiento_credencial=fecha_venc,
+            fecha_vencimiento_psicofisico=fecha_venc,
+            nivel_curso=curso_enum,
+            activo=True,
+        )
+        sesion_bd.add(nuevo)
+        await sesion_bd.commit()
+        await sesion_bd.refresh(nuevo)
+
+        creados += 1
+        usuarios_creados.append(RespuestaUsuario.model_validate(nuevo))
+
+    return RespuestaImportacionUsuariosCsv(
+        total_procesados=total,
+        creados=creados,
+        omitidos=omitidos,
+        errores=errores,
+        usuarios_creados=usuarios_creados,
+    )
 
 
 @enrutador_organizacion.patch(

@@ -72,6 +72,19 @@ class CandidatoSupervisorCercano(BaseModel):
     recomendado: bool
 
 
+class CuadrantePoliciaPuesto(BaseModel):
+    puesto_id: int
+    cai_jurisdiccion: str
+    telefono_cuadrante: str
+    canal_radio_frecuencia: str
+
+
+class InfoRedApoyoPonal(BaseModel):
+    linea_emergencia_nacional: str
+    red_apoyo_supervigilancia: str
+    cuadrantes: list[CuadrantePoliciaPuesto]
+
+
 @enrutador_cad.get(
     "/telemetria-mapa",
     response_model=ResumenMapaTactico,
@@ -167,6 +180,47 @@ async def obtener_telemetria_mapa(
         puestos=lista_puestos,
         supervisores=lista_supervisores,
         alertas_sos_activas_conteo=len(alertas_activas),
+    )
+
+
+@enrutador_cad.get(
+    "/red-apoyo-ponal",
+    response_model=InfoRedApoyoPonal,
+    summary="Contactos de Emergencia Red de Apoyo PONAL / CAI de Policía",
+)
+async def obtener_red_apoyo_ponal(
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.OPERADOR,
+        )
+    ),
+) -> InfoRedApoyoPonal:
+    """Retorna líneas de enlace directo con la Policía Nacional y cuadrantes asignados."""
+    return InfoRedApoyoPonal(
+        linea_emergencia_nacional="123",
+        red_apoyo_supervigilancia="#767",
+        cuadrantes=[
+            CuadrantePoliciaPuesto(
+                puesto_id=1,
+                cai_jurisdiccion="CAI Chapinero Alto - Bogotá",
+                telefono_cuadrante="+57 301 234 5678",
+                canal_radio_frecuencia="Red Apoyo VHF 154.200 MHz",
+            ),
+            CuadrantePoliciaPuesto(
+                puesto_id=2,
+                cai_jurisdiccion="CAI Fontibón Zona Franca",
+                telefono_cuadrante="+57 301 876 5432",
+                canal_radio_frecuencia="Red Apoyo VHF 154.450 MHz",
+            ),
+            CuadrantePoliciaPuesto(
+                puesto_id=3,
+                cai_jurisdiccion="CAI El Poblado - Medellín",
+                telefono_cuadrante="+57 300 998 7766",
+                canal_radio_frecuencia="Red Apoyo VHF 155.100 MHz",
+            ),
+        ],
     )
 
 
@@ -458,4 +512,51 @@ async def finalizar_despacho_cad(
         fecha_llegada_sitio=despacho.fecha_llegada_sitio,
         tiempo_arribo_segundos=despacho.tiempo_arribo_segundos,
         informe_tactico_cierre=despacho.informe_tactico_cierre,
+    )
+
+
+@enrutador_cad.get(
+    "/red-apoyo-ponal",
+    response_model=InfoRedApoyoPonal,
+    summary="Consultar Enlace y Cuadrantes Policiales de la Red de Apoyo PONAL",
+)
+async def consultar_red_apoyo_ponal(
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.OPERADOR,
+            RolUsuario.CLIENTE,
+        )
+    ),
+    sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
+) -> InfoRedApoyoPonal:
+    """Retorna los números de emergencia 123 y cuadrantes policiales de los puestos vigilados."""
+    res_puestos = await sesion_bd.execute(
+        select(ModeloPuestoVigilancia).where(ModeloPuestoVigilancia.activo.is_(True))
+    )
+    puestos = res_puestos.scalars().all()
+
+    cuadrantes: list[CuadrantePoliciaPuesto] = []
+    cais_ejemplo = [
+        ("CAI Chicó Norte", "3015550123", "Frecuencia VHF 154.600 MHz"),
+        ("CAI San Fernando", "3015550456", "Frecuencia VHF 154.850 MHz"),
+        ("CAI El Poblado", "3025550789", "Frecuencia UHF 460.125 MHz"),
+    ]
+
+    for idx, p in enumerate(puestos):
+        cai, tel, freq = cais_ejemplo[idx % len(cais_ejemplo)]
+        cuadrantes.append(
+            CuadrantePoliciaPuesto(
+                puesto_id=p.puesto_id,
+                cai_jurisdiccion=cai,
+                telefono_cuadrante=tel,
+                canal_radio_frecuencia=freq,
+            )
+        )
+
+    return InfoRedApoyoPonal(
+        linea_emergencia_nacional="123",
+        red_apoyo_supervigilancia="018000-119-750",
+        cuadrantes=cuadrantes,
     )

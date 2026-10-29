@@ -35,6 +35,7 @@ import {
 import {
   URL_WEBSOCKET_MINUTA,
   extraerMensajeError,
+  servicioAbrirActaRelevoHtml,
   servicioAbrirLibroFoliadoOficial,
   servicioCrearRegistroMinuta,
   servicioListarMinuta,
@@ -515,7 +516,21 @@ export function ModuloMinutaTiempoReal(): ReactElement {
                   </strong>{" "}
                   ({item.codigo_placa_operador})
                 </span>
-                <span>{item.nombre_puesto}</span>
+                <div className="flex items-center gap-2">
+                  <span>{item.nombre_puesto}</span>
+                  {item.tipo_registro === "ENTREGA_RECIBO_PUESTO" && (
+                    <button
+                      type="button"
+                      onClick={(): void => {
+                        void servicioAbrirActaRelevoHtml(1);
+                      }}
+                      className="inline-flex items-center gap-1 rounded border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300 hover:bg-emerald-500/20"
+                    >
+                      <FileCheck2 className="h-3 w-3" />
+                      <span>Acta Foliada</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </article>
           ))}

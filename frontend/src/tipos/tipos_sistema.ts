@@ -708,3 +708,34 @@ export interface DespachoPatrulla {
   tiempo_arribo_segundos: number | null;
   informe_tactico_cierre: string | null;
 }
+
+// ============================================================================
+// MEJORAS TÁCTICAS V3.0: LPR, PONAL Y CARGA MASIVA CSV
+// ============================================================================
+export interface RespuestaEscanearPlaca {
+  placa_normalizada: string;
+  tipo_vehiculo: string;
+  es_valida: boolean;
+  mensaje: string;
+}
+
+export interface CuadrantePoliciaPuesto {
+  puesto_id: number;
+  cai_jurisdiccion: string;
+  telefono_cuadrante: string;
+  canal_radio_frecuencia: string;
+}
+
+export interface InfoRedApoyoPonal {
+  linea_emergencia_nacional: string;
+  red_apoyo_supervigilancia: string;
+  cuadrantes: CuadrantePoliciaPuesto[];
+}
+
+export interface RespuestaImportacionUsuariosCsv {
+  total_procesados: number;
+  creados: number;
+  omitidos: number;
+  errores: string[];
+  usuarios_creados: UsuarioSistema[];
+}

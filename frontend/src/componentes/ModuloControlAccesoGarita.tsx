@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   servicioDecodificarCedula,
+  servicioEscanearPlaca,
   servicioRegistrarIngresoGarita,
   servicioRegistrarSalidaGarita,
   servicioListarActivosEnPuesto,
@@ -40,6 +41,7 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
   const [motivoIngreso, setMotivoIngreso] = useState<string>("");
   const [observaciones, setObservaciones] = useState<string>("");
   const [registrando, setRegistrando] = useState<boolean>(false);
+  const [escaneandoPlaca, setEscaneandoPlaca] = useState<boolean>(false);
 
   const [mensaje, setMensaje] = useState<{
     tipo: "exito" | "error";
@@ -107,6 +109,34 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
       });
     } finally {
       setDecodificando(false);
+    }
+  }
+
+  async function handleEscanearPlaca(texto: string) {
+    if (!texto || texto.trim().length < 3) return;
+    setEscaneandoPlaca(true);
+    try {
+      const res = await servicioEscanearPlaca(texto);
+      if (res.es_valida) {
+        setPlacaVehiculo(res.placa_normalizada);
+        setTipoAcceso("VEHICULAR");
+        setMensaje({
+          tipo: "exito",
+          texto: `${res.mensaje} (${res.tipo_vehiculo})`,
+        });
+      } else {
+        setMensaje({
+          tipo: "error",
+          texto: res.mensaje,
+        });
+      }
+    } catch (err) {
+      setMensaje({
+        tipo: "error",
+        texto: `Error al escanear placa: ${extraerMensajeError(err)}`,
+      });
+    } finally {
+      setEscaneandoPlaca(false);
     }
   }
 
@@ -375,14 +405,27 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
               </div>
 
               <div>
-                <label className="block text-[11px] font-mono text-slate-400 mb-1">
-                  PLACA VEHÍCULO (SI APLICA)
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-mono text-slate-400">
+                    PLACA VEHÍCULO (LPR)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleEscanearPlaca(placaVehiculo)}
+                    disabled={escaneandoPlaca || !placaVehiculo}
+                    className="text-[10px] font-mono font-bold text-sky-400 hover:text-sky-300 disabled:opacity-40"
+                  >
+                    {escaneandoPlaca ? "VALIDANDO..." : "🔍 LPR OPTIMIZAR"}
+                  </button>
+                </div>
                 <input
                   type="text"
-                  placeholder="Ej: HXZ-889"
+                  placeholder="Ej: ABC123 / XYZ89E"
                   value={placaVehiculo}
                   onChange={(e) => setPlacaVehiculo(e.target.value.toUpperCase())}
+                  onBlur={() => {
+                    if (placaVehiculo.length >= 5) handleEscanearPlaca(placaVehiculo);
+                  }}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-sky-500 font-mono uppercase"
                 />
               </div>

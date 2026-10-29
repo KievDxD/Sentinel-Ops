@@ -54,6 +54,9 @@ import type {
   ResumenMapaTactico,
   CandidatoSupervisorCercano,
   DespachoPatrulla,
+  RespuestaEscanearPlaca,
+  InfoRedApoyoPonal,
+  RespuestaImportacionUsuariosCsv,
   TurnoOperativo,
   UsuarioSistema,
 } from "../tipos/tipos_sistema";
@@ -666,6 +669,56 @@ export async function servicioFinalizarDespachoCad(
   const respuesta = await clienteApi.patch<DespachoPatrulla>(
     `/api/cad/despacho/${despachoId}/finalizar`,
     { informe_tactico_cierre: informeTacticoCierre }
+  );
+  return respuesta.data;
+}
+
+// ============================================================================
+// MEJORAS TÁCTICAS V3.0: IMPORTACIÓN CSV, ACTA FOLIADA HTML, LPR Y RED PONAL
+// ============================================================================
+export async function servicioImportarUsuariosCsv(
+  contenidoCsv: string
+): Promise<RespuestaImportacionUsuariosCsv> {
+  const respuesta = await clienteApi.post<RespuestaImportacionUsuariosCsv>(
+    "/api/organizacion/usuarios/importar-csv",
+    { contenido_csv: contenidoCsv }
+  );
+  return respuesta.data;
+}
+
+export function servicioObtenerUrlActaRelevoHtml(actaId: number): string {
+  return `${URL_BASE_API}/api/minuta/actas-relevo/${actaId}/html`;
+}
+
+export async function servicioAbrirActaRelevoHtml(
+  actaId: number
+): Promise<void> {
+  const token = usarAlmacenAutenticacion.getState().tokenAcceso;
+  const respuesta = await clienteApi.get<string>(
+    `/api/minuta/actas-relevo/${actaId}/html`,
+    {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      responseType: "text",
+    }
+  );
+  const blob = new Blob([respuesta.data], { type: "text/html;charset=utf-8" });
+  const blobUrl = URL.createObjectURL(blob);
+  window.open(blobUrl, "_blank");
+}
+
+export async function servicioEscanearPlaca(
+  textoPlaca: string
+): Promise<RespuestaEscanearPlaca> {
+  const respuesta = await clienteApi.post<RespuestaEscanearPlaca>(
+    "/api/acceso/escanear-placa",
+    { texto_placa: textoPlaca }
+  );
+  return respuesta.data;
+}
+
+export async function servicioObtenerRedApoyoPonal(): Promise<InfoRedApoyoPonal> {
+  const respuesta = await clienteApi.get<InfoRedApoyoPonal>(
+    "/api/cad/red-apoyo-ponal"
   );
   return respuesta.data;
 }

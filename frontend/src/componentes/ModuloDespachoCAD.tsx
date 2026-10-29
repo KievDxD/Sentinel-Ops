@@ -6,6 +6,7 @@ import {
   servicioRegistrarLlegadaPatrulla,
   servicioFinalizarDespachoCad,
   servicioListarAlertasSos,
+  servicioObtenerRedApoyoPonal,
   extraerMensajeError,
 } from "../servicios/cliente_api";
 import type {
@@ -13,6 +14,7 @@ import type {
   AlertaPanicoSos,
   CandidatoSupervisorCercano,
   DespachoPatrulla,
+  InfoRedApoyoPonal,
 } from "../tipos/tipos_sistema";
 
 export function ModuloDespachoCAD(): React.ReactElement {
@@ -30,6 +32,7 @@ export function ModuloDespachoCAD(): React.ReactElement {
     null
   );
   const [informeCierre, setInformeCierre] = useState<string>("");
+  const [redApoyo, setRedApoyo] = useState<InfoRedApoyoPonal | null>(null);
   const [procesando, setProcesando] = useState<boolean>(false);
   const [mensaje, setMensaje] = useState<{
     tipo: "exito" | "error";
@@ -44,12 +47,14 @@ export function ModuloDespachoCAD(): React.ReactElement {
 
   async function cargarDatosCAD() {
     try {
-      const [resTelemetria, resAlertas] = await Promise.all([
+      const [resTelemetria, resAlertas, resPonal] = await Promise.all([
         servicioObtenerTelemetriaMapa(),
         servicioListarAlertasSos(true), // Solo activas
+        servicioObtenerRedApoyoPonal(),
       ]);
       setTelemetria(resTelemetria);
       setAlertasSos(resAlertas);
+      setRedApoyo(resPonal);
     } catch (err) {
       console.error("Error al cargar telemetría CAD:", err);
     }
@@ -449,6 +454,60 @@ export function ModuloDespachoCAD(): React.ReactElement {
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Enlace Oficial Red de Apoyo PONAL & Línea 123 */}
+          {redApoyo && (
+            <div className="mt-4 p-4 rounded-xl border border-sky-500/30 bg-slate-950/90 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🛡️</span>
+                  <span className="text-xs font-bold text-sky-300 font-mono">
+                    RED DE APOYO POLICÍA NACIONAL (PONAL)
+                  </span>
+                </div>
+                <a
+                  href={`tel:${redApoyo.linea_emergencia_nacional}`}
+                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-white font-mono font-bold text-xs rounded-lg animate-pulse"
+                >
+                  🚨 LLAMAR 123
+                </a>
+              </div>
+
+              <div className="text-[11px] text-slate-400">
+                SuperVigilancia Línea Gratuita:{" "}
+                <strong className="text-slate-200">
+                  {redApoyo.red_apoyo_supervigilancia}
+                </strong>
+              </div>
+
+              <div className="space-y-1.5 pt-2 border-t border-slate-800">
+                <div className="text-[10px] font-mono text-slate-400 uppercase">
+                  Cuadrantes de Jurisdicción por Puesto:
+                </div>
+                {redApoyo.cuadrantes.map((c) => (
+                  <div
+                    key={c.puesto_id}
+                    className="flex items-center justify-between p-2 rounded bg-slate-900 border border-slate-800 text-[11px]"
+                  >
+                    <div>
+                      <span className="font-bold text-slate-200">
+                        {c.cai_jurisdiccion}
+                      </span>
+                      <span className="block text-[10px] font-mono text-cyan-400">
+                        {c.canal_radio_frecuencia}
+                      </span>
+                    </div>
+                    <a
+                      href={`tel:${c.telefono_cuadrante}`}
+                      className="text-sky-400 hover:underline font-mono text-xs font-semibold"
+                    >
+                      📞 {c.telefono_cuadrante}
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

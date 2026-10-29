@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   MapPin,
   Award,
+  FileSpreadsheet,
+  Upload,
 } from "lucide-react";
 import {
   extraerMensajeError,
@@ -21,6 +23,7 @@ import {
   servicioAsignarPuestoUsuario,
   servicioCrearPuesto,
   servicioCrearUsuario,
+  servicioImportarUsuariosCsv,
   servicioListarPuestos,
   servicioListarUsuarios,
 } from "../servicios/cliente_api";
@@ -56,6 +59,17 @@ export function ModuloPersonalYPuestos(): ReactElement {
   const [excepcionAdminInput, setExcepcionAdminInput] =
     useState<boolean>(false);
   const [motivoExcepcionInput, setMotivoExcepcionInput] = useState<string>("");
+
+  // Estado para modal de importación masiva CSV
+  const [mostrarModalCsv, setMostrarModalCsv] = useState<boolean>(false);
+  const [contenidoCsvInput, setContenidoCsvInput] = useState<string>("");
+  const [procesandoCsv, setProcesandoCsv] = useState<boolean>(false);
+  const [resumenCsv, setResumenCsv] = useState<{
+    total: number;
+    creados: number;
+    omitidos: number;
+    errores: string[];
+  } | null>(null);
 
   const formularioUsuario = useForm<CrearUsuarioFormulario>({
     defaultValues: {
@@ -205,6 +219,46 @@ export function ModuloPersonalYPuestos(): ReactElement {
     }
   };
 
+  const manejarCargaMasivaCsv = async (): Promise<void> => {
+    if (!contenidoCsvInput.trim()) {
+      setMensajeError("Pegue o cargue un archivo con contenido CSV.");
+      return;
+    }
+    setProcesandoCsv(true);
+    setMensajeError(null);
+    setResumenCsv(null);
+    try {
+      const res = await servicioImportarUsuariosCsv(contenidoCsvInput);
+      setResumenCsv({
+        total: res.total_procesados,
+        creados: res.creados,
+        omitidos: res.omitidos,
+        errores: res.errores,
+      });
+      setMensajeExito(
+        `Importación completada: ${res.creados} nuevos usuarios creados, ${res.omitidos} omitidos.`
+      );
+      void cargarDatosOrganizacion();
+    } catch (err: unknown) {
+      setMensajeError(extraerMensajeError(err));
+    } finally {
+      setProcesandoCsv(false);
+    }
+  };
+
+  const descargarPlantillaCsv = (): void => {
+    const encabezados =
+      "documento_identidad,nombre_completo,correo_electronico,telefono,rol,codigo_placa,numero_credencial_sv,fecha_vencimiento_credencial,nivel_curso\n1012345678,Pedro Vigilante,pedro@seguridad.co,3101234567,OPERADOR,GRD-101,SV-2026-101,2027-12-31,FUNDAMENTACION\n1087654321,Maria Supervisora,maria@seguridad.co,3159876543,SUPERVISOR,SUP-202,SV-2026-202,2027-10-15,ESPECIALIZACION";
+    const blob = new Blob([encabezados], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "plantilla_personal_sentinel.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const esAdministrador = usuarioActual?.rol === "ADMINISTRADOR";
   const esRrhh = usuarioActual?.rol === "RRHH";
   const puedeCrearPersonal = esAdministrador || esRrhh;
@@ -340,6 +394,103 @@ export function ModuloPersonalYPuestos(): ReactElement {
         </form>
       )}
 
+      {/* Modal / Panel de Carga Masiva CSV */}
+      {mostrarModalCsv && (
+        <div className="rounded-2xl border-2 border-sky-500/50 bg-slate-900 p-6 shadow-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-sky-400" />
+              <h3 className="text-base font-bold text-white">
+                Carga Masiva de Personal y Credenciales SuperVigilancia (CSV)
+              </h3>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={descargarPlantillaCsv}
+                className="text-xs text-sky-300 hover:text-sky-200 underline"
+              >
+                📥 Descargar Plantilla CSV
+              </button>
+              <button
+                type="button"
+                onClick={(): void => setMostrarModalCsv(false)}
+                className="text-xs text-slate-400 hover:text-white"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-400">
+            Pegue a continuación las filas en formato CSV o cargue un archivo. Se admite delimitador por coma o punto y coma. Se encriptará la contraseña por defecto <code className="text-emerald-400">Sentinel2026*</code> para cada nuevo ingreso.
+          </p>
+
+          <textarea
+            rows={5}
+            value={contenidoCsvInput}
+            onChange={(e): void => setContenidoCsvInput(e.target.value)}
+            placeholder={`documento_identidad,nombre_completo,correo_electronico,telefono,rol,codigo_placa,numero_credencial_sv,fecha_vencimiento_credencial,nivel_curso\n1012345678,Pedro Vigilante,pedro@seguridad.co,3101234567,OPERADOR,GRD-101,SV-2026-101,2027-12-31,FUNDAMENTACION`}
+            className="w-full rounded-xl border border-slate-700 bg-slate-950 p-3 font-mono text-xs text-white focus:outline-none focus:border-sky-500"
+          />
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              onChange={(e): void => {
+                const archivo = e.target.files?.[0];
+                if (archivo) {
+                  const lector = new FileReader();
+                  lector.onload = (evento): void => {
+                    setContenidoCsvInput((evento.target?.result as string) || "");
+                  };
+                  lector.readAsText(archivo);
+                }
+              }}
+              className="text-xs text-slate-400 file:mr-2 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20"
+            />
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={(): void => {
+                  setContenidoCsvInput("");
+                  setResumenCsv(null);
+                }}
+                className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:bg-slate-800"
+              >
+                Limpiar
+              </button>
+              <button
+                type="button"
+                onClick={(): void => void manejarCargaMasivaCsv()}
+                disabled={procesandoCsv || !contenidoCsvInput.trim()}
+                className="flex items-center gap-1.5 rounded-xl bg-sky-500 px-5 py-2 text-xs font-black uppercase text-slate-950 hover:bg-sky-400 disabled:opacity-50"
+              >
+                <Upload className="h-4 w-4" />
+                <span>{procesandoCsv ? "Procesando Lote..." : "Procesar Carga Masiva"}</span>
+              </button>
+            </div>
+          </div>
+
+          {resumenCsv && (
+            <div className="rounded-xl border border-sky-500/30 bg-sky-950/30 p-3 text-xs space-y-1">
+              <div className="font-bold text-sky-200">
+                Resultado de Importación: {resumenCsv.creados} creados de {resumenCsv.total} registros ({resumenCsv.omitidos} omitidos por duplicidad).
+              </div>
+              {resumenCsv.errores.length > 0 && (
+                <div className="text-rose-300 font-mono text-[11px] max-h-20 overflow-y-auto">
+                  {resumenCsv.errores.map((err, i) => (
+                    <div key={i}>• {err}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Listado de Personal Operativo, Semáforo SV y RBAC */}
         <section className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-xl">
@@ -350,9 +501,21 @@ export function ModuloPersonalYPuestos(): ReactElement {
                 Personal Activo, Roles (5 Niveles) y Credenciales SV
               </h2>
             </div>
-            <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
-              {usuarios.length} Integrantes
-            </span>
+            <div className="flex items-center gap-2">
+              {puedeCrearPersonal && (
+                <button
+                  type="button"
+                  onClick={(): void => setMostrarModalCsv(true)}
+                  className="flex items-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 px-3 py-1 text-xs font-bold text-sky-300 hover:bg-sky-500/20"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-sky-400" />
+                  <span>Importar CSV</span>
+                </button>
+              )}
+              <span className="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-slate-300">
+                {usuarios.length} Integrantes
+              </span>
+            </div>
           </div>
 
           {cargando ? (
