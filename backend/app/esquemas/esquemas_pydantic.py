@@ -7,9 +7,11 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.modelos.modelos_bd import (
     EstadoAlertaSos,
+    EstadoFactura,
     EstadoItemDotacion,
     EstadoSolicitudIntercambio,
     EstadoTurno,
+    ModalidadServicioTarifa,
     NivelCursoVigilancia,
     NivelPrioridad,
     RolUsuario,
@@ -526,3 +528,74 @@ class RespuestaAlertaSos(BaseModel):
     fecha_atencion: datetime | None = None
     tiempo_reaccion_segundos: int | None = None
     nota_reaccion: str | None = None
+
+
+# ============================================================================
+# MÓDULO 8: TARIFICACIÓN LEGAL SUPERVIGILANCIA Y FACTURACIÓN B2B (V3.0)
+# ============================================================================
+class SolicitudCotizacionTarifa(BaseModel):
+    """Parámetros para simulación tarifaria legal de un puesto."""
+
+    modalidad_servicio: ModalidadServicioTarifa
+    cantidad_puestos: int = Field(default=1, ge=1, le=100)
+    porcentaje_administracion: float = Field(default=0.10, ge=0.08, le=0.30)
+    smlmv: float = Field(default=1_423_500.0, ge=1_000_000.0)
+    auxilio_transporte: float = Field(default=200_000.0, ge=0.0)
+
+
+class RespuestaDesgloseCotizacion(BaseModel):
+    """Desglose detallado de la cotización según regulación SuperVigilancia."""
+
+    modalidad_servicio: ModalidadServicioTarifa
+    cantidad_puestos: int
+    guardas_por_puesto: int
+    total_guardas_requeridos: int
+    costo_laboral_unitario_guarda: float
+    costo_mano_obra_total: float
+    costo_armamento_y_equipos: float
+    costo_administracion_aiu: float
+    subtotal_antes_iva: float
+    iva_dian: float
+    tarifa_total_factura_cop: float
+    tarifa_minima_supervigilancia: float
+
+
+class SolicitudGenerarPrefactura(BaseModel):
+    """Solicitud para emitir una prefactura legal B2B para un cliente."""
+
+    cliente_id: int
+    puesto_id: int | None = None
+    mes_servicio: str = Field(..., pattern=r"^\d{4}-\d{2}$")  # Ej: "2026-10"
+    modalidad_servicio: ModalidadServicioTarifa
+    cantidad_puestos: int = Field(default=1, ge=1, le=100)
+    porcentaje_administracion: float = Field(default=0.10, ge=0.08, le=0.30)
+    notas_comerciales: str | None = Field(default=None, max_length=500)
+
+
+class RespuestaPrefactura(BaseModel):
+    """Detalle completo de una prefactura legal generada."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    prefactura_id: int
+    codigo_factura: str
+    cliente_id: int
+    nombre_cliente: str
+    puesto_id: int | None = None
+    nombre_puesto: str | None = None
+    mes_servicio: str
+    modalidad_servicio: ModalidadServicioTarifa
+    cantidad_puestos: int
+    cantidad_guardas_requeridos: int
+    costo_mano_obra_cop: float
+    costo_armamento_cop: float
+    costo_administracion_cop: float
+    subtotal_cop: float
+    iva_cop: float
+    total_factura_cop: float
+    estado_factura: EstadoFactura
+    notas_comerciales: str | None = None
+    firma_digital_sha256: str
+    fecha_emision: datetime
+    fecha_vencimiento: date
+

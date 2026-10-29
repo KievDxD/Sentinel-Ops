@@ -32,6 +32,7 @@ import {
   Siren,
   CheckCircle2,
   MapPin,
+  Calculator,
 } from "lucide-react";
 import { format } from "date-fns";
 import { usarAlmacenAutenticacion } from "./estado/almacen_autenticacion";
@@ -57,6 +58,7 @@ import { ModuloMinutaTiempoReal } from "./componentes/ModuloMinutaTiempoReal";
 import { ModuloIntercambioTurnos } from "./componentes/ModuloIntercambioTurnos";
 import { ModuloPersonalYPuestos } from "./componentes/ModuloPersonalYPuestos";
 import { ModuloRondasYReportes } from "./componentes/ModuloRondasYReportes";
+import { ModuloTarificadorB2B } from "./componentes/ModuloTarificadorB2B";
 
 interface CuentaRapida {
   etiqueta: string;
@@ -513,6 +515,24 @@ export function App(): ReactElement {
                         : "Escáner Rondas QR/GPS"}
                 </span>
               </NavLink>
+
+              <NavLink
+                to="/facturacion-b2b"
+                className={({ isActive }): string =>
+                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    isActive
+                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                  }`
+                }
+              >
+                <Calculator className="h-4 w-4 shrink-0" />
+                <span>
+                  {usuarioActual.rol === "CLIENTE"
+                    ? "Mis Facturas B2B & Tarifas"
+                    : "Tarificación SV & Facturas"}
+                </span>
+              </NavLink>
             </nav>
           </div>
 
@@ -761,6 +781,10 @@ export function App(): ReactElement {
               <Route
                 path="/rondas-y-reportes"
                 element={<ModuloRondasYReportes />}
+              />
+              <Route
+                path="/facturacion-b2b"
+                element={<ModuloTarificadorB2B />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

@@ -39,6 +39,10 @@ import type {
   SolicitudGenerarRotacion2x2,
   SolicitudInicioSesion,
   SolicitudIntercambioTurno,
+  SolicitudCotizacionTarifa,
+  RespuestaDesgloseCotizacion,
+  SolicitudGenerarPrefactura,
+  PrefacturaB2B,
   TurnoOperativo,
   UsuarioSistema,
 } from "../tipos/tipos_sistema";
@@ -444,6 +448,51 @@ export async function servicioDescargarPrenominaCsv(): Promise<void> {
 export async function servicioAbrirLibroFoliadoOficial(): Promise<void> {
   const respuesta = await clienteApi.get<string>(
     "/api/reportes/minuta-foliada-oficial",
+    { responseType: "text" as "json" }
+  );
+  const nuevaVentana = window.open("", "_blank");
+  if (nuevaVentana) {
+    nuevaVentana.document.open();
+    nuevaVentana.document.write(respuesta.data);
+    nuevaVentana.document.close();
+  }
+}
+
+// ============================================================================
+// MÓDULO 8: TARIFICACIÓN LEGAL SUPERVIGILANCIA Y FACTURACIÓN B2B (V3.0)
+// ============================================================================
+export async function servicioCotizarTarifa(
+  solicitud: SolicitudCotizacionTarifa
+): Promise<RespuestaDesgloseCotizacion> {
+  const respuesta = await clienteApi.post<RespuestaDesgloseCotizacion>(
+    "/api/facturacion/cotizar",
+    solicitud
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarPrefacturas(): Promise<PrefacturaB2B[]> {
+  const respuesta = await clienteApi.get<PrefacturaB2B[]>("/api/facturacion/prefacturas");
+  return respuesta.data;
+}
+
+export async function servicioGenerarPrefactura(
+  datos: SolicitudGenerarPrefactura
+): Promise<PrefacturaB2B> {
+  const respuesta = await clienteApi.post<PrefacturaB2B>(
+    "/api/facturacion/prefacturas",
+    datos
+  );
+  return respuesta.data;
+}
+
+export function servicioObtenerUrlPrefacturaHtml(prefacturaId: number): string {
+  return `${URL_BASE_API}/api/facturacion/prefacturas/${prefacturaId}/html`;
+}
+
+export async function servicioAbrirPrefacturaHtml(prefacturaId: number): Promise<void> {
+  const respuesta = await clienteApi.get<string>(
+    `/api/facturacion/prefacturas/${prefacturaId}/html`,
     { responseType: "text" as "json" }
   );
   const nuevaVentana = window.open("", "_blank");

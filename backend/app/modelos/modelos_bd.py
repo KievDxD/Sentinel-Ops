@@ -124,6 +124,25 @@ class EstadoAlertaSos(str, Enum):
     ATENDIDA = "ATENDIDA"
 
 
+class ModalidadServicioTarifa(str, Enum):
+    """Modalidades de servicio reguladas por la Superintendencia de Vigilancia."""
+
+    VIGILANCIA_24H_ARMADA = "VIGILANCIA_24H_ARMADA"
+    VIGILANCIA_24H_SIN_ARMA = "VIGILANCIA_24H_SIN_ARMA"
+    VIGILANCIA_12H_DIURNA = "VIGILANCIA_12H_DIURNA"
+    VIGILANCIA_12H_NOCTURNA = "VIGILANCIA_12H_NOCTURNA"
+    SUPERVISION_MOTORIZADA = "SUPERVISION_MOTORIZADA"
+
+
+class EstadoFactura(str, Enum):
+    """Estados del ciclo de cobro de facturación B2B."""
+
+    BORRADOR = "BORRADOR"
+    EMITIDA = "EMITIDA"
+    PAGADA = "PAGADA"
+    ANULADA = "ANULADA"
+
+
 class ModeloUsuario(BaseModeloDeclarativo):
     """Tabla `usuarios` que almacena los 5 roles RBAC y sus credenciales SuperVigilancia."""
 
@@ -602,3 +621,53 @@ class ModeloAlertaPanicoSos(BaseModeloDeclarativo):
         Integer, nullable=True
     )
     nota_reaccion: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ModeloPrefactura(BaseModeloDeclarativo):
+    """
+    Tabla `prefacturas_b2b` (V3.0): Prefacturación y liquidación comercial según SuperVigilancia.
+    """
+
+    __tablename__ = "prefacturas_b2b"
+
+    prefactura_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    codigo_factura: Mapped[str] = mapped_column(
+        String(50), unique=True, index=True, nullable=False
+    )
+    cliente_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    puesto_id: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), nullable=True
+    )
+    mes_servicio: Mapped[str] = mapped_column(String(20), nullable=False)
+    modalidad_servicio: Mapped[ModalidadServicioTarifa] = mapped_column(
+        SqlEnum(ModalidadServicioTarifa, name="enum_modalidad_servicio_tarifa"),
+        nullable=False,
+    )
+    cantidad_puestos: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    cantidad_guardas_requeridos: Mapped[int] = mapped_column(Integer, default=4, nullable=False)
+    costo_mano_obra_cop: Mapped[float] = mapped_column(Float, nullable=False)
+    costo_armamento_cop: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    costo_administracion_cop: Mapped[float] = mapped_column(Float, nullable=False)
+    subtotal_cop: Mapped[float] = mapped_column(Float, nullable=False)
+    iva_cop: Mapped[float] = mapped_column(Float, nullable=False)
+    total_factura_cop: Mapped[float] = mapped_column(Float, nullable=False)
+    estado_factura: Mapped[EstadoFactura] = mapped_column(
+        SqlEnum(EstadoFactura, name="enum_estado_factura"),
+        default=EstadoFactura.EMITIDA,
+        nullable=False,
+    )
+    notas_comerciales: Mapped[str | None] = mapped_column(Text, nullable=True)
+    firma_digital_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    fecha_emision: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+    fecha_vencimiento: Mapped[date] = mapped_column(Date, nullable=False)
+
+    cliente: Mapped["ModeloUsuario"] = relationship("ModeloUsuario", foreign_keys=[cliente_id])
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia | None"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )

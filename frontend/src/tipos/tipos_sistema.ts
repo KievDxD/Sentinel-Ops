@@ -48,6 +48,15 @@ export type TipoAusentismo =
   | "FALTA_INJUSTIFICADA"
   | "ABANDONO_PUESTO";
 
+export type ModalidadServicioTarifa =
+  | "VIGILANCIA_24H_ARMADA"
+  | "VIGILANCIA_24H_SIN_ARMA"
+  | "VIGILANCIA_12H_DIURNA"
+  | "VIGILANCIA_12H_NOCTURNA"
+  | "SUPERVISION_MOTORIZADA";
+
+export type EstadoFactura = "BORRADOR" | "EMITIDA" | "PAGADA" | "ANULADA";
+
 export type EstadoAlertaSos = "ACTIVA" | "ATENDIDA";
 
 export interface RespuestaEstadoServidor {
@@ -444,4 +453,61 @@ export interface AlertaCoberturaPuesto {
   puntos_control_verificados: number;
   total_puntos_control: number;
   detalle_operativo: string;
+}
+
+export interface SolicitudCotizacionTarifa {
+  modalidad_servicio: ModalidadServicioTarifa;
+  cantidad_puestos: number;
+  porcentaje_administracion: number;
+  smlmv?: number;
+  auxilio_transporte?: number;
+}
+
+export interface RespuestaDesgloseCotizacion {
+  modalidad_servicio: ModalidadServicioTarifa;
+  cantidad_puestos: number;
+  guardas_por_puesto: number;
+  total_guardas_requeridos: number;
+  costo_laboral_unitario_guarda: number;
+  costo_mano_obra_total: number;
+  costo_armamento_y_equipos: number;
+  costo_administracion_aiu: number;
+  subtotal_antes_iva: number;
+  iva_dian: number;
+  tarifa_total_factura_cop: number;
+  tarifa_minima_supervigilancia: number;
+}
+
+export interface SolicitudGenerarPrefactura {
+  cliente_id: number;
+  puesto_id?: number | null;
+  mes_servicio: string;
+  modalidad_servicio: ModalidadServicioTarifa;
+  cantidad_puestos: number;
+  porcentaje_administracion: number;
+  notas_comerciales?: string;
+}
+
+export interface PrefacturaB2B {
+  prefactura_id: number;
+  codigo_factura: string;
+  cliente_id: number;
+  nombre_cliente: string;
+  puesto_id: number | null;
+  nombre_puesto: string | null;
+  mes_servicio: string;
+  modalidad_servicio: ModalidadServicioTarifa;
+  cantidad_puestos: number;
+  cantidad_guardas_requeridos: number;
+  costo_mano_obra_cop: number;
+  costo_armamento_cop: number;
+  costo_administracion_cop: number;
+  subtotal_cop: number;
+  iva_cop: number;
+  total_factura_cop: number;
+  estado_factura: EstadoFactura;
+  notas_comerciales: string | null;
+  firma_digital_sha256: string;
+  fecha_emision: string;
+  fecha_vencimiento: string;
 }
