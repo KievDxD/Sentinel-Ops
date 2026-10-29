@@ -62,9 +62,9 @@ async def generar_paquete_respaldo_forense(
                 "registro_id": m.registro_id,
                 "puesto_id": m.puesto_id,
                 "tipo_registro": m.tipo_registro.value,
-                "titulo": m.titulo,
-                "prioridad": m.prioridad.value,
-                "fecha_evento": m.fecha_evento.isoformat(),
+                "titulo": m.titulo_evento,
+                "prioridad": m.nivel_prioridad.value,
+                "fecha_evento": m.fecha_registro.isoformat(),
             }
             for m in minutas
         ],

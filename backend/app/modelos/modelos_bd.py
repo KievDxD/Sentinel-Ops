@@ -775,7 +775,7 @@ class ModeloKardexBalistico(BaseModeloDeclarativo):
         Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
     )
     dotacion_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("dotaciones_puestos.dotacion_id"), index=True, nullable=False
+        Integer, ForeignKey("dotacion_armamento_puesto.dotacion_id"), index=True, nullable=False
     )
     operador_responsable_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
