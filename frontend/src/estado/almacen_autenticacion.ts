@@ -1,6 +1,8 @@
 /**
  * Almacén global de estado con Zustand para la sesión JWT, el Control de Roles (RBAC de 5 niveles)
- * y el Modo Táctico de Campo de Alto Contraste (Sunlight Ready) persistido en localStorage.
+ * y el Modo Táctico de Campo de Alto Contraste (Sunlight Ready).
+ * La sesión se gestiona por pestaña/ventana en sessionStorage para garantizar que al abrir
+ * la aplicación siempre solicite autenticación formal si no hay una sesión activa explícita.
  */
 
 import { create } from "zustand";
@@ -27,7 +29,10 @@ interface EstadoAutenticacion extends DatosPersistidosSesion {
 
 function leerSesionInicial(): DatosPersistidosSesion {
   try {
-    const textoGuardado = localStorage.getItem(CLAVE_ALMACENAMIENTO_SESION);
+    // Purgar cualquier residuo en localStorage para evitar que la aplicación arranque con sesión predeterminada
+    localStorage.removeItem(CLAVE_ALMACENAMIENTO_SESION);
+
+    const textoGuardado = sessionStorage.getItem(CLAVE_ALMACENAMIENTO_SESION);
     if (!textoGuardado) {
       return { tokenAcceso: null, tokenRefresco: null, usuarioActual: null };
     }
@@ -61,14 +66,16 @@ export const usarAlmacenAutenticacion = create<EstadoAutenticacion>(
         tokenRefresco: respuesta.token_refresco,
         usuarioActual: respuesta.usuario,
       };
-      localStorage.setItem(
+      sessionStorage.setItem(
         CLAVE_ALMACENAMIENTO_SESION,
         JSON.stringify(nuevoEstado)
       );
+      localStorage.removeItem(CLAVE_ALMACENAMIENTO_SESION);
       set(nuevoEstado);
     },
 
     cerrarSesion: (): void => {
+      sessionStorage.removeItem(CLAVE_ALMACENAMIENTO_SESION);
       localStorage.removeItem(CLAVE_ALMACENAMIENTO_SESION);
       set({
         tokenAcceso: null,
