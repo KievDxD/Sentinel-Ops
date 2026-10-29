@@ -6,10 +6,12 @@ requires-python = ">=3.10"
 
 [tool.pyrefly]
 python-version = "3.15"
-search-paths = [
+project-includes = ["backend"]
+site-packages-path = [
     "backend",
-    "backend/app",
-    "backend/.venv/Lib/site-packages"
+    "backend/.venv/Lib/site-packages",
+    "C:/Users/USER/Downloads/SENTINEL  OPS/backend",
+    "C:/Users/USER/Downloads/SENTINEL  OPS/backend/.venv/Lib/site-packages"
 ]
 
 [tool.pyright]

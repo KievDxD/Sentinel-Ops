@@ -60,16 +60,17 @@ FabricaSesionesAsincronas: async_sessionmaker[AsyncSession] = async_sessionmaker
 def _verificar_y_sincronizar_esquema(conexion_sincrona: object) -> None:
     """Verifica si el esquema V2.0 está completo; si faltan columnas o tablas nuevas, recrea limpiamente."""
     inspector = inspect(conexion_sincrona)
-    tablas_existentes = inspector.get_table_names()
-    if "usuarios" in tablas_existentes:
-        columnas_usuarios = {
-            col["name"] for col in inspector.get_columns("usuarios")
-        }
-        if (
-            "numero_credencial_sv" not in columnas_usuarios
-            or "dotacion_armamento_puesto" not in tablas_existentes
-        ):
-            BaseModeloDeclarativo.metadata.drop_all(bind=conexion_sincrona)  # type: ignore[arg-type]
+    if inspector is not None:
+        tablas_existentes = inspector.get_table_names()
+        if "usuarios" in tablas_existentes:
+            columnas_usuarios = {
+                col["name"] for col in inspector.get_columns("usuarios")
+            }
+            if (
+                "numero_credencial_sv" not in columnas_usuarios
+                or "dotacion_armamento_puesto" not in tablas_existentes
+            ):
+                BaseModeloDeclarativo.metadata.drop_all(bind=conexion_sincrona)  # type: ignore[arg-type]
     BaseModeloDeclarativo.metadata.create_all(bind=conexion_sincrona)  # type: ignore[arg-type]
 
 

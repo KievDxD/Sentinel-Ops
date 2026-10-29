@@ -90,17 +90,19 @@ async def exportar_prenomina_colombia_csv(
     )
 
     for t in turnos:
-        if t.tipo_turno == TipoTurno.DESCANSO:
+        if t.tipo_turno == TipoTurno.DESCANSO or t.operador is None or t.puesto_vigilancia is None:
             continue
+        op = t.operador
+        pv = t.puesto_vigilancia
         escritor.writerow(
             [
                 t.turno_id,
-                t.operador.documento_identidad,
-                t.operador.nombre_completo,
-                t.operador.codigo_placa,
-                t.operador.numero_credencial_sv or "SIN_CREDENCIAL",
-                t.puesto_vigilancia.codigo_puesto,
-                t.puesto_vigilancia.nombre_puesto,
+                op.documento_identidad,
+                op.nombre_completo,
+                op.codigo_placa,
+                op.numero_credencial_sv or "SIN_CREDENCIAL",
+                pv.codigo_puesto,
+                pv.nombre_puesto,
                 t.tipo_turno.value,
                 t.estado_turno.value,
                 t.fecha_inicio.strftime("%Y-%m-%d %H:%M"),
@@ -174,9 +176,16 @@ async def generar_libro_foliado_minuta_oficial(
     hash_acumulado = hashlib.sha256(b"SENTINEL_OPS_GENESIS_2026").hexdigest()
 
     for indice, reg in enumerate(registros, start=1):
+        doc_operador = reg.operador.documento_identidad if reg.operador else "N/A"
+        nom_operador = reg.operador.nombre_completo if reg.operador else "Operador"
+        placa_operador = reg.operador.codigo_placa if reg.operador else "OPR"
+        cred_operador = (reg.operador.numero_credencial_sv or "SV-N/A") if reg.operador else "SV-N/A"
+        cod_puesto = reg.puesto_vigilancia.codigo_puesto if reg.puesto_vigilancia else "PST"
+        nom_puesto = reg.puesto_vigilancia.nombre_puesto if reg.puesto_vigilancia else "Puesto"
+
         cadena_folio = (
             f"{indice}|{reg.registro_id}|{reg.fecha_registro.isoformat()}|"
-            f"{reg.operador.documento_identidad}|{reg.titulo_evento}|{hash_acumulado}"
+            f"{doc_operador}|{reg.titulo_evento}|{hash_acumulado}"
         )
         hash_acumulado = hashlib.sha256(cadena_folio.encode("utf-8")).hexdigest()
         sello_corto = hash_acumulado[:16].upper()
@@ -186,10 +195,10 @@ async def generar_libro_foliado_minuta_oficial(
             <tr>
               <td class="mono">FOLIO-{indice:04d}</td>
               <td class="mono">{reg.fecha_registro.strftime('%Y-%m-%d %H:%M:%S')}</td>
-              <td><strong>{reg.puesto_vigilancia.codigo_puesto}</strong><br/>{reg.puesto_vigilancia.nombre_puesto}</td>
+              <td><strong>{cod_puesto}</strong><br/>{nom_puesto}</td>
               <td>{reg.tipo_registro.value}<br/><strong>Prioridad: {reg.nivel_prioridad.value}</strong><br/><span class="mono">{reg.visibilidad.value}</span></td>
               <td><strong>{reg.titulo_evento}</strong><br/>{reg.descripcion_detallada}</td>
-              <td>{reg.operador.nombre_completo}<br/><span class="mono">{reg.operador.codigo_placa} • {reg.operador.numero_credencial_sv or 'SV-N/A'}</span></td>
+              <td>{nom_operador}<br/><span class="mono">{placa_operador} • {cred_operador}</span></td>
               <td class="mono">{sello_corto}</td>
             </tr>
             """
