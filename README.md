@@ -263,3 +263,22 @@ npm --prefix frontend run build
 **Resultado de Pruebas Automatizadas:**
 - `20 passed` en `pytest` (100% de la suite en verde).
 - Compilación de producción en Vite con cero errores de TypeScript y code splitting optimizado sin advertencias de tamaño de bundle.
+
+
+---
+
+## 11. Estado del Roadmap, Cobertura Integral y Certificación V3.5
+
+- [x] **Fases 1 a 7 — Núcleo Operativo:** Control RBAC 5 Niveles, Programación Rotativa 2x2, Minuta Digital WebSockets en tiempo real, Checklist de Dotación Indumil, Rondas de Control QR/GPS Offline-First y Liquidación Laboral con tope dinámico Ley 2101 (42 horas semanales).
+- [x] **Fase 8 — Tarificación Legal SuperVigilancia & Facturación B2B:** Cálculo regulado de piso tarifario mensual por puesto (4 guardas 24/7), factor prestacional, recargo del 10% por armas, AIU $\ge 10\%$ e IVA del 19% sobre AIU (Art. 462-1 E.T. DIAN) con prefacturas foliadas.
+- [x] **Fase 9 — Control de Acceso Garita & Lectura PDF417:** Decodificación nativa de la cédula de ciudadanía colombiana (Registraduría), reconocimiento óptico LPR de placas vehiculares bajo estándar RUNT (`ABC-123` y `ABC-12D`), y consentimiento expreso de Habeas Data (Ley 1581 de 2012).
+- [x] **Fase 10 — Libro Balístico Digital DCCA Indumil:** Semáforo preventivo de salvoconductos (90/60/30 días), kardex balístico inmutable de munición con Blockchain Ligero SHA-256 y acreditación obligatoria de tiro anual.
+- [x] **Fase 11 — Centro de Despacho CAD & Monitoreo GPS:** Radar táctico cartográfico en vivo, algoritmo geodésico Haversine para cálculo de ETA y asignación de patrullas cercanas, cronometraje de reacción en segundos y catálogo de la Red de Apoyo PONAL (123).
+- [x] **Fase 12 — Arquitectura SaaS Multi-Tenant & Contenerización:** Aislamiento estricto por `tenant_id`, restricción `403 Forbidden` para cuentas cliente fuera de su instalación, volcado forense criptográfico y Dockerfile multi-etapa para producción unificada.
+- [x] **Optimización Enterprise V3.5 — Rendimiento, Resiliencia y Criptografía:**
+  - Carga masiva CSV optimizada (`POST /api/organizacion/usuarios/importar-csv`) con pre-cálculo único de hash `bcrypt` y validación en memoria sin bloqueo del Event Loop.
+  - Blockchain Ligero / Hash Chaining SHA-256 con hash génesis (`"0" * 64`) en Actas de Relevo, Minutas y Kardex Balístico.
+  - Fragmentación milimétrica por día calendario en el corte de medianoche (`00:00:00`) para turnos nocturnos (`18:00` a `06:00`).
+  - Code Splitting en Vite con `manualChunks` (`vendor-react`, `vendor-icons`, `vendor-utils`), reduciendo el bundle a cero advertencias de tamaño.
+  - Sincronización Offline-First resiliente con hash de integridad local y reconexión automática mediante `window.addEventListener('online')`.
+  - Resiliencia en WebSockets con descarte de conexiones muertas y latidos PING/PONG.
