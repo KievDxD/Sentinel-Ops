@@ -16,11 +16,51 @@ Plataforma empresarial de nivel de producción diseñada para la administración
 | **Base de Datos Principal** | PostgreSQL 15 (Docker) + SQLite Local (Contingencia) | Persistencia relacional multi-tenant con tolerancia a fallos y failover automático en contingencia. |
 | **Criptografía y Seguridad** | Passlib, Bcrypt con salteado dinámico, PyJWT (HMAC-SHA256), Hashlib | Autenticación JWT por pestaña (`sessionStorage`), blockchain ligero SHA-256 encadenado y protección XSS/DoS. |
 | **Motor Normativo Laboral** | Python ZoneInfo (`America/Bogota`), Datetime | Liquidación turno a turno con tope semanal de 42 horas (Ley 2101), recargos nocturnos y dominicales. |
-| **Infraestructura y Cloud** | Docker, Docker Compose V2, Nginx, Healthchecks | Despliegue contenerizado orquestado en un solo comando con verificación continua de salud de servicios. |
+| **Infraestructura y Cloud** | Docker, Docker Compose V2, Nginx, Healthchecks, GitHub Actions | Despliegue contenerizado orquestado en un solo comando y canal CI/CD automatizado. |
 
 ---
 
-## 2. Diagrama de Arquitectura del Sistema (Mermaid)
+## 2. Estructura del Proyecto
+
+Organización modular limpia con separación estricta de responsabilidades entre cliente y servidor:
+
+```text
+├── .github/
+│   └── workflows/
+│       └── ci.yml               # Pipeline CI (Pytest 3.12 + Typecheck/Vite Build Node 20)
+├── .env.example                 # Variables de entorno críticas documentadas
+├── docker-compose.yml           # Orquestación productiva de servicios (Postgres 15 + Servidor)
+├── Dockerfile                   # Compilación multi-etapa (Node 20 Alpine + Python 3.12)
+├── iniciar.sh                   # Script de arranque táctico portátil con rutas relativas
+├── README.md                    # Documentación maestra y referencia regulatoria
+├── backend/
+│   ├── pyproject.toml           # Configuración de pruebas Pytest y herramientas Python
+│   ├── requirements.txt         # Dependencias de producción y librerías criptográficas
+│   ├── app/
+│   │   ├── main.py              # Punto de entrada FastAPI, ciclo de vida y middlewares
+│   │   ├── nucleo/              # Configuración BaseSettings, base de datos y seguridad JWT/Bcrypt
+│   │   ├── modelos/             # Modelos declarativos SQLAlchemy con índices multi-tenant
+│   │   ├── esquemas/            # Esquemas de entrada/salida y validación Pydantic V2
+│   │   ├── servicios/           # Motores de turnos, tarificación, websockets, PDF417 y forense
+│   │   └── rutas/               # Controladores de API REST y WebSockets modulares
+│   └── tests/                   # Suite de 20 pruebas automatizadas (Pytest)
+└── frontend/
+    ├── package.json             # Manifiesto de paquetes y scripts de compilación
+    ├── tsconfig.json            # Configuración estricta de TypeScript
+    ├── vite.config.ts           # Configuración Vite con Code Splitting (manualChunks)
+    ├── tailwind.config.js       # Tokens de diseño táctico militar de alto contraste
+    └── src/
+        ├── main.tsx             # Punto de montaje del Virtual DOM
+        ├── App.tsx              # Centro de control y enrutamiento con guardia de sesión
+        ├── tipos/               # Modelos de dominio e interfaces TypeScript
+        ├── estado/              # Gestión de estado global con Zustand (sessionStorage)
+        ├── servicios/           # Cliente HTTP Axios centralizado y WebSocket
+        └── componentes/         # 12 módulos tácticos interactivos de usuario
+```
+
+---
+
+## 3. Diagrama de Arquitectura del Sistema (Mermaid)
 
 ```mermaid
 flowchart TD
@@ -82,7 +122,7 @@ flowchart TD
 
 ---
 
-## 3. Marco Legal y Cumplimiento Regulatorio Colombiano
+## 4. Marco Legal y Cumplimiento Regulatorio Colombiano
 
 SENTINEL // OPS está alineado de forma nativa con el marco jurídico colombiano aplicable a las empresas prestadoras de servicios de vigilancia y seguridad privada:
 
@@ -119,36 +159,41 @@ SENTINEL // OPS está alineado de forma nativa con el marco jurídico colombiano
 
 ---
 
-## 4. Módulos Operativos Enterprise V3.5
+## 5. Módulos Operativos y Referencia Rápida de Endpoints
 
-### 4.1. Criptografía Forense y Blockchain Ligero (SHA-256 Chaining)
+### 5.1. Criptografía Forense y Blockchain Ligero (SHA-256 Chaining)
 - Las **Actas de Relevo con Armamento Indumil**, los registros de la **Minuta Digital** y el **Kardex Balístico DCCA** implementan encadenamiento criptográfico:
   $$\text{hash}_{\text{actual}} = \text{SHA256}(\text{payload}_{\text{actual}} \parallel \text{hash}_{\text{anterior}})$$
-- Si es el primer registro del puesto, se emplea un **Hash Génesis** (`"0" * 64`). Cualquier intento de adulteración en bases de datos rompe la cadena criptográfica, garantizando inmutabilidad forense absoluta ante auditorías de la SuperVigilancia.
+- Si es el primer registro del puesto, se emplea un **Hash Génesis** (`"0" * 64`). Cualquier intento de adulteración rompe la cadena, garantizando inmutabilidad forense ante auditorías de la SuperVigilancia.
+- **Endpoint clave:** `GET /api/minuta/actas-relevo/{acta_id}/html` — Emisión oficial imprimible del acta de relevo foliada con código de seguridad SHA-256 y protección XSS.
 
-### 4.2. Motor Inteligente de Turnos 2x2 y Ley 2101
+### 5.2. Motor Inteligente de Turnos 2x2, Carga Masiva y Ley 2101
 - Programación automatizada del ciclo rotativo de 6 días: 2 Diurnos (`06:00` a `18:00`), 2 Nocturnos (`18:00` a `06:00`) y 2 Descansos Compensatorios (24h francas).
 - Sugerencia de guardas relevantes en un clic basada en puntaje de idoneidad, credencial vigente y menor acumulación de horas extras.
 - Exportación en un clic de prenómina en formato `.CSV` optimizado para software contable colombiano (Siigo, Novasoft, Helisa).
+- **Endpoint clave:** `POST /api/organizacion/usuarios/importar-csv` — Inserción masiva de personal con pre-cálculo único de hash `bcrypt` (`Sentinel2026*`) y validación en memoria sin bloqueo del Event Loop.
 
-### 4.3. Control de Acceso en Garita, Escáner PDF417 y Reconocimiento LPR
+### 5.3. Control de Acceso en Garita, Escáner PDF417 y Reconocimiento LPR
 - Decodificación nativa de la cédula de ciudadanía colombiana (trama PDF417 de Registraduría Nacional).
-- Normalización automática de placas bajo el estándar RUNT (`ABC-123` automóviles y `ABC-12D` motocicletas).
-- Consentimiento de Habeas Data (Ley 1581 de 2012) integrado en el flujo de ingreso.
+- Consentimiento de Habeas Data (Ley 1581 de 2012) integrado en el formulario de ingreso.
+- **Endpoint clave:** `POST /api/acceso/escanear-placa` — Reconocimiento y normalización inmediata de placas bajo el estándar RUNT (`ABC-123` automóviles y `ABC-12D` motocicletas).
 
-### 4.4. Centro de Despacho Táctico CAD y Monitoreo Satelital
+### 5.4. Centro de Despacho Táctico CAD y Monitoreo Satelital
 - Radar GPS cartográfico con telemetría en vivo de puestos y supervisores motorizados.
 - Algoritmo geodésico de Haversine para despacho de la patrulla más cercana con cálculo de ETA.
-- Directorio de la Red de Apoyo PONAL (línea 123, CAI de cuadrante y frecuencias de radio).
+- **Endpoint clave:** `GET /api/cad/red-apoyo-ponal` — Directorio táctico integrado con la línea nacional 123, CAI de jurisdicción y frecuencias de radio (VHF/UHF) por puesto vigilado.
 
-### 4.5. Resiliencia Offline-First en Rondas QR/GPS
+### 5.5. Auditoría Forense y Respaldo Criptográfico
+- **Endpoint clave:** `GET /api/reportes/respaldo-forense-cifrado` — Volcado forense maestro que consolida turnos, minutas, actas de armamento, movimientos balísticos y facturación bajo un sello criptográfico unificado para peritajes judiciales.
+
+### 5.6. Resiliencia Offline-First en Rondas QR/GPS
 - Cola local persistente con cálculo de integridad y timestamp de captura de cliente.
 - Detección automática del evento de red `online` y sincronización en segundo plano sin intervención humana.
 - Indicador visual claro del estado de enlace: `ONLINE` o `MODO OFFLINE-FIRST RETENIDO`.
 
 ---
 
-## 5. Matriz de Roles y Aislamiento Multi-Tenant
+## 6. Matriz de Roles y Aislamiento Multi-Tenant
 
 | Rol | Alcance y Permisos Operativos |
 | :--- | :--- |
@@ -160,7 +205,7 @@ SENTINEL // OPS está alineado de forma nativa con el marco jurídico colombiano
 
 ---
 
-## 6. Configuración de Variables de Entorno (`.env.example`)
+## 7. Configuración de Variables de Entorno (`.env.example`)
 
 Cree un archivo `.env` en la raíz del proyecto tomando como referencia `.env.example`:
 
@@ -185,7 +230,7 @@ Variables documentadas en el archivo de entorno:
 
 ---
 
-## 7. Despliegue con Docker Compose (Producción Unificada)
+## 8. Despliegue con Docker Compose (Producción Unificada)
 
 Para levantar la base de datos PostgreSQL 15 y el servidor unificado de Sentinel OPS con un solo comando:
 
@@ -194,6 +239,7 @@ docker compose up -d --build
 ```
 
 El stack incluye:
+
 1. **`base_datos_sentinel`**: Contenedor PostgreSQL 15 Alpine con healthcheck nativo (`pg_isready`) y volumen persistente de datos.
 2. **`servidor_sentinel`**: Contenedor de producción multi-etapa que compila el frontend en Vite y ejecuta FastAPI con Uvicorn ASGI en el puerto `8000`.
 
@@ -204,7 +250,7 @@ docker compose ps
 
 ---
 
-## 8. Ejecución en Desarrollo Local
+## 9. Ejecución en Desarrollo Local
 
 ### Opción A: Script Unificado Portátil (Recomendado)
 ```bash
@@ -238,7 +284,7 @@ npm run dev
 
 ---
 
-## 9. Cuentas Semilla del Sistema (Contraseña Maestra: `Sentinel2026*`)
+## 10. Cuentas Semilla del Sistema (Contraseña Maestra: `Sentinel2026*`)
 
 | Rol | Correo Electrónico | Indicativo / Placa | Sede Asignada |
 | :--- | :--- | :--- | :--- |
@@ -250,7 +296,7 @@ npm run dev
 
 ---
 
-## 10. Suite de Pruebas Automatizadas y Aseguramiento de Calidad
+## 11. Suite de Pruebas Automatizadas y Aseguramiento de Calidad
 
 ```bash
 # Suite completa de Pytest (20 pruebas unitarias y de integración)
@@ -264,10 +310,9 @@ npm --prefix frontend run build
 - `20 passed` en `pytest` (100% de la suite en verde).
 - Compilación de producción en Vite con cero errores de TypeScript y code splitting optimizado sin advertencias de tamaño de bundle.
 
-
 ---
 
-## 11. Estado del Roadmap, Cobertura Integral y Certificación V3.5
+## 12. Estado del Roadmap, Cobertura Integral y Certificación V3.5
 
 - [x] **Fases 1 a 7 — Núcleo Operativo:** Control RBAC 5 Niveles, Programación Rotativa 2x2, Minuta Digital WebSockets en tiempo real, Checklist de Dotación Indumil, Rondas de Control QR/GPS Offline-First y Liquidación Laboral con tope dinámico Ley 2101 (42 horas semanales).
 - [x] **Fase 8 — Tarificación Legal SuperVigilancia & Facturación B2B:** Cálculo regulado de piso tarifario mensual por puesto (4 guardas 24/7), factor prestacional, recargo del 10% por armas, AIU $\ge 10\%$ e IVA del 19% sobre AIU (Art. 462-1 E.T. DIAN) con prefacturas foliadas.

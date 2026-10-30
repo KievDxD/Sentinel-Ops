@@ -1,0 +1,59 @@
+name: CI / Aseguramiento de Calidad Táctica
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  backend-pruebas:
+    name: Backend Pytest (Python 3.12)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Instalar Dependencias del Backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Ejecutar Suite Automatizada de Pytest
+        env:
+          ENTORNO: test
+          MODO_MULTI_TENANT: "True"
+          URL_BASE_DATOS_RESPALDO: "sqlite+aiosqlite:///./test_sentinel.db"
+        run: |
+          pytest backend/tests -v
+
+  frontend-compilacion:
+    name: Frontend Build & Typecheck (Node 20)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar Código Fuente
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar Dependencias del Frontend
+        run: |
+          npm --prefix frontend ci
+
+      - name: Verificar Tipado TypeScript y Compilar Bundle Vite
+        run: |
+          npm --prefix frontend run build
