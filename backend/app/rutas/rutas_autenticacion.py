@@ -346,11 +346,23 @@ async def importar_usuarios_csv(
     delimitador = ";" if ";" in primera_linea and "," not in primera_linea else ","
     lector = csv.DictReader(io.StringIO(solicitud.contenido_csv), delimiter=delimitador)
 
+    # Pre-cálculo único del digest bcrypt fuera del bucle para evitar bloqueo del Event Loop
+    hash_contrasena_defecto: str = encriptar_contrasena("Sentinel2026*")
+
+    # Pre-carga de documentos y correos existentes para validación en memoria O(1)
+    existentes_bd = (
+        await sesion_bd.execute(
+            select(ModeloUsuario.documento_identidad, ModeloUsuario.correo_electronico)
+        )
+    ).all()
+    documentos_registrados: set[str] = {fila_bd[0] for fila_bd in existentes_bd}
+    correos_registrados: set[str] = {fila_bd[1].lower() for fila_bd in existentes_bd}
+
     total = 0
     creados = 0
     omitidos = 0
     errores: list[str] = []
-    usuarios_creados: list[RespuestaUsuario] = []
+    nuevos_modelos: list[ModeloUsuario] = []
 
     for idx, fila in enumerate(lector, start=2):
         total += 1
@@ -375,11 +387,8 @@ async def importar_usuarios_csv(
             omitidos += 1
             continue
 
-        consulta_existente = select(ModeloUsuario).where(
-            (ModeloUsuario.documento_identidad == doc) | (ModeloUsuario.correo_electronico == correo.lower())
-        )
-        existe = (await sesion_bd.execute(consulta_existente)).scalar_one_or_none()
-        if existe:
+        correo_limpio = correo.lower()
+        if doc in documentos_registrados or correo_limpio in correos_registrados:
             omitidos += 1
             continue
 
@@ -406,9 +415,9 @@ async def importar_usuarios_csv(
         nuevo = ModeloUsuario(
             documento_identidad=doc,
             nombre_completo=nombre,
-            correo_electronico=correo.lower(),
+            correo_electronico=correo_limpio,
             telefono=tel,
-            contrasena_encriptada=encriptar_contrasena("Sentinel2026*"),
+            contrasena_encriptada=hash_contrasena_defecto,
             rol=rol_enum,
             codigo_placa=placa,
             puesto_base_id=None,
@@ -418,12 +427,18 @@ async def importar_usuarios_csv(
             nivel_curso=curso_enum,
             activo=True,
         )
-        sesion_bd.add(nuevo)
-        await sesion_bd.commit()
-        await sesion_bd.refresh(nuevo)
-
+        nuevos_modelos.append(nuevo)
+        documentos_registrados.add(doc)
+        correos_registrados.add(correo_limpio)
         creados += 1
-        usuarios_creados.append(RespuestaUsuario.model_validate(nuevo))
+
+    if nuevos_modelos:
+        sesion_bd.add_all(nuevos_modelos)
+        await sesion_bd.commit()
+        for modelo in nuevos_modelos:
+            await sesion_bd.refresh(modelo)
+
+    usuarios_creados = [RespuestaUsuario.model_validate(m) for m in nuevos_modelos]
 
     return RespuestaImportacionUsuariosCsv(
         total_procesados=total,

@@ -47,7 +47,12 @@ from app.modelos.modelos_bd import (
     VisibilidadMinuta,
 )
 from app.nucleo.base_datos import obtener_sesion_bd
-from app.nucleo.seguridad import obtener_usuario_actual, requerir_roles
+from app.nucleo.seguridad import (
+    HASH_GENESIS_SHA256,
+    calcular_hash_encadenado_sha256,
+    obtener_usuario_actual,
+    requerir_roles,
+)
 from app.servicios.gestor_websockets import gestor_minuta_ws
 
 enrutador_minuta = APIRouter(
@@ -57,7 +62,7 @@ enrutador_minuta = APIRouter(
 
 
 def mapear_minuta_a_respuesta(registro: ModeloRegistroMinuta) -> RespuestaRegistroMinuta:
-    """Convierte un ModeloRegistroMinuta cargado a su esquema de respuesta Pydantic."""
+    """Convierte un ModeloRegistroMinuta cargado a su esquema de respuesta Pydantic con sellos SHA-256."""
     return RespuestaRegistroMinuta(
         registro_id=registro.registro_id,
         operador_id=registro.operador_id,
@@ -74,6 +79,8 @@ def mapear_minuta_a_respuesta(registro: ModeloRegistroMinuta) -> RespuestaRegist
         nombre_visitante=registro.nombre_visitante,
         documento_visitante=registro.documento_visitante,
         placa_vehiculo=registro.placa_vehiculo,
+        sello_sha256=registro.sello_sha256,
+        hash_anterior_sha256=registro.hash_anterior_sha256,
         fecha_registro=registro.fecha_registro,
     )
 
@@ -104,6 +111,12 @@ async def listar_registros_minuta(
     )
 
     if usuario_actual.rol == RolUsuario.CLIENTE:
+        if puesto_id is not None and usuario_actual.puesto_base_id is not None:
+            if puesto_id != usuario_actual.puesto_base_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No tiene autorización para consultar minutas de otras sedes.",
+                )
         consulta = consulta.where(
             ModeloRegistroMinuta.visibilidad == VisibilidadMinuta.PUBLICA_CLIENTE
         )
@@ -154,9 +167,30 @@ async def crear_registro_minuta(
             detail="El puesto de vigilancia indicado no existe.",
         )
 
+    # Hash Chaining Forense SHA-256 (Blockchain Ligero)
+    ultimo_sello = (
+        await sesion_bd.execute(
+            select(ModeloRegistroMinuta.sello_sha256)
+            .where(ModeloRegistroMinuta.puesto_id == puesto.puesto_id)
+            .order_by(ModeloRegistroMinuta.registro_id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+
+    hash_anterior = ultimo_sello if ultimo_sello else HASH_GENESIS_SHA256
+    instante_actual = datetime.now(timezone.utc)
+    datos_minuta = (
+        f"MINUTA|{puesto.codigo_puesto}|{usuario_actual.documento_identidad}|"
+        f"{solicitud.tipo_registro.value}|{solicitud.visibilidad.value}|"
+        f"{solicitud.titulo_evento.strip()}|{solicitud.descripcion_detallada.strip()}|"
+        f"{instante_actual.isoformat()}"
+    )
+    sello_sha256 = calcular_hash_encadenado_sha256(datos_minuta, hash_anterior)
+
     nuevo_registro = ModeloRegistroMinuta(
         operador_id=usuario_actual.usuario_id,
         puesto_id=puesto.puesto_id,
+        tenant_id=getattr(puesto, "tenant_id", "TENANT-SENTINEL-DEMO") or "TENANT-SENTINEL-DEMO",
         tipo_registro=solicitud.tipo_registro,
         visibilidad=solicitud.visibilidad,
         nivel_prioridad=solicitud.nivel_prioridad,
@@ -175,6 +209,9 @@ async def crear_registro_minuta(
             if solicitud.placa_vehiculo
             else None
         ),
+        sello_sha256=sello_sha256,
+        hash_anterior_sha256=hash_anterior,
+        fecha_registro=instante_actual,
     )
 
     sesion_bd.add(nuevo_registro)
@@ -244,10 +281,17 @@ async def listar_actas_relevo(
     consulta = select(ModeloActaRelevoPuesto).order_by(
         ModeloActaRelevoPuesto.fecha_acta.desc()
     )
-    if usuario_actual.rol == RolUsuario.CLIENTE and usuario_actual.puesto_base_id:
-        consulta = consulta.where(
-            ModeloActaRelevoPuesto.puesto_id == usuario_actual.puesto_base_id
-        )
+    if usuario_actual.rol == RolUsuario.CLIENTE:
+        if puesto_id is not None and usuario_actual.puesto_base_id is not None:
+            if puesto_id != usuario_actual.puesto_base_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No tiene autorización para consultar actas de otras sedes.",
+                )
+        if usuario_actual.puesto_base_id:
+            consulta = consulta.where(
+                ModeloActaRelevoPuesto.puesto_id == usuario_actual.puesto_base_id
+            )
     elif puesto_id is not None:
         consulta = consulta.where(ModeloActaRelevoPuesto.puesto_id == puesto_id)
 
@@ -293,6 +337,7 @@ async def listar_actas_relevo(
                 estado_linterna_y_llaves=a.estado_linterna_y_llaves,
                 observaciones_relevo=a.observaciones_relevo,
                 sello_sha256=a.sello_sha256,
+                hash_anterior_sha256=a.hash_anterior_sha256,
                 alerta_disparada=a.alerta_disparada,
                 fecha_acta=a.fecha_acta,
             )
@@ -358,15 +403,27 @@ async def crear_acta_relevo_puesto(
     )
 
     instante_actual = datetime.now(timezone.utc)
+    # Hash Chaining Forense SHA-256 (Blockchain Ligero) para Actas Indumil
+    ultima_acta = (
+        await sesion_bd.execute(
+            select(ModeloActaRelevoPuesto.sello_sha256)
+            .where(ModeloActaRelevoPuesto.puesto_id == puesto.puesto_id)
+            .order_by(ModeloActaRelevoPuesto.acta_id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    hash_anterior_acta = ultima_acta if ultima_acta else HASH_GENESIS_SHA256
+
     semilla_hash = (
         f"ACTA_INDUMIL|{puesto.codigo_puesto}|{usuario_actual.documento_identidad}|"
         f"{solicitud.estado_armamento.value}|{solicitud.municion_verificada}|"
         f"{solicitud.observaciones_relevo.strip()}|{instante_actual.isoformat()}"
     )
-    sello_sha256 = hashlib.sha256(semilla_hash.encode("utf-8")).hexdigest().upper()
+    sello_sha256 = calcular_hash_encadenado_sha256(semilla_hash, hash_anterior_acta)
 
     nueva_acta = ModeloActaRelevoPuesto(
         puesto_id=puesto.puesto_id,
+        tenant_id=getattr(puesto, "tenant_id", "TENANT-SENTINEL-DEMO") or "TENANT-SENTINEL-DEMO",
         operador_saliente_id=usuario_actual.usuario_id,
         operador_entrante_id=solicitud.operador_entrante_id,
         estado_armamento=solicitud.estado_armamento,
@@ -376,6 +433,7 @@ async def crear_acta_relevo_puesto(
         estado_linterna_y_llaves=solicitud.estado_linterna_y_llaves,
         observaciones_relevo=solicitud.observaciones_relevo.strip(),
         sello_sha256=sello_sha256,
+        hash_anterior_sha256=hash_anterior_acta,
         alerta_disparada=hay_anomalia,
         fecha_acta=instante_actual,
     )
@@ -403,14 +461,35 @@ async def crear_acta_relevo_puesto(
         f"Observaciones: {solicitud.observaciones_relevo.strip()}. Sello SHA-256: {sello_sha256[:16]}"
     )
 
+    ultimo_sello_minuta = (
+        await sesion_bd.execute(
+            select(ModeloRegistroMinuta.sello_sha256)
+            .where(ModeloRegistroMinuta.puesto_id == puesto.puesto_id)
+            .order_by(ModeloRegistroMinuta.registro_id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    hash_anterior_minuta = ultimo_sello_minuta if ultimo_sello_minuta else HASH_GENESIS_SHA256
+    datos_minuta = (
+        f"MINUTA|{puesto.codigo_puesto}|{usuario_actual.documento_identidad}|"
+        f"{TipoRegistroMinuta.ENTREGA_RECIBO_PUESTO.value}|{visibilidad.value}|"
+        f"{prefijo_titulo}Acta Entrega/Recibo de Puesto {puesto.codigo_puesto}|{detalle_minuta}|"
+        f"{instante_actual.isoformat()}"
+    )
+    sello_minuta = calcular_hash_encadenado_sha256(datos_minuta, hash_anterior_minuta)
+
     registro_minuta = ModeloRegistroMinuta(
         operador_id=usuario_actual.usuario_id,
         puesto_id=puesto.puesto_id,
+        tenant_id=getattr(puesto, "tenant_id", "TENANT-SENTINEL-DEMO") or "TENANT-SENTINEL-DEMO",
         tipo_registro=TipoRegistroMinuta.ENTREGA_RECIBO_PUESTO,
         visibilidad=visibilidad,
         nivel_prioridad=prioridad,
         titulo_evento=f"{prefijo_titulo}Acta Entrega/Recibo de Puesto {puesto.codigo_puesto}",
         descripcion_detallada=detalle_minuta,
+        sello_sha256=sello_minuta,
+        hash_anterior_sha256=hash_anterior_minuta,
+        fecha_registro=instante_actual,
     )
     sesion_bd.add(registro_minuta)
     await sesion_bd.commit()
@@ -461,6 +540,7 @@ async def crear_acta_relevo_puesto(
         estado_linterna_y_llaves=nueva_acta.estado_linterna_y_llaves,
         observaciones_relevo=nueva_acta.observaciones_relevo,
         sello_sha256=nueva_acta.sello_sha256,
+        hash_anterior_sha256=nueva_acta.hash_anterior_sha256,
         alerta_disparada=nueva_acta.alerta_disparada,
         fecha_acta=nueva_acta.fecha_acta,
     )
@@ -933,15 +1013,22 @@ async def atender_alerta_panico_sos(
 async def endpoint_websocket_minuta(websocket: WebSocket) -> None:
     """
     Canal WebSocket (/ws/minuta) que mantiene suscritos en vivo a los paneles de
-    Supervisores, Administradores, RRHH, Clientes y Operadores.
+    Supervisores, Administradores, RRHH, Clientes y Operadores con resiliencia anti-desconexión.
     """
     await gestor_minuta_ws.conectar_cliente(websocket)
     try:
         while True:
             mensaje_cliente: str = await websocket.receive_text()
-            if mensaje_cliente == "LATIDO":
-                await websocket.send_json({"tipo_mensaje": "LATIDO_ACTIVO"})
+            if mensaje_cliente in ("LATIDO", "PING", "ping"):
+                await websocket.send_json(
+                    {
+                        "tipo_mensaje": "PONG",
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
     except (WebSocketDisconnect, ConnectionResetError):
         gestor_minuta_ws.desconectar_cliente(websocket)
     except Exception:
+        gestor_minuta_ws.desconectar_cliente(websocket)
+    finally:
         gestor_minuta_ws.desconectar_cliente(websocket)

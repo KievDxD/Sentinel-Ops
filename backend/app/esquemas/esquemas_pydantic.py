@@ -313,6 +313,8 @@ class RespuestaRegistroMinuta(BaseModel):
     nombre_visitante: str | None = None
     documento_visitante: str | None = None
     placa_vehiculo: str | None = None
+    sello_sha256: str | None = None
+    hash_anterior_sha256: str | None = None
     fecha_registro: datetime
 
 
@@ -479,6 +481,7 @@ class RespuestaActaRelevo(BaseModel):
     estado_linterna_y_llaves: EstadoItemDotacion
     observaciones_relevo: str
     sello_sha256: str
+    hash_anterior_sha256: str | None = None
     alerta_disparada: bool
     fecha_acta: datetime
 
@@ -672,6 +675,10 @@ class SolicitudRegistrarAccesoGarita(BaseModel):
     placa_vehiculo: str | None = Field(default=None, max_length=15)
     empresa_o_destino: str = Field(..., min_length=2, max_length=120)
     motivo_ingreso: str = Field(..., min_length=3, max_length=200)
+    autoriza_tratamiento_datos: bool = Field(
+        default=True,
+        description="Consentimiento informado para tratamiento de datos personales (Ley 1581 de 2012)",
+    )
     observaciones: str | None = Field(default=None, max_length=500)
 
 
@@ -694,6 +701,7 @@ class RespuestaAccesoGarita(BaseModel):
     placa_vehiculo: str | None = None
     empresa_o_destino: str
     motivo_ingreso: str
+    autoriza_tratamiento_datos: bool = True
     es_sospechoso_alerta: bool
     estado_acceso: EstadoAccesoGarita
     fecha_ingreso: datetime
@@ -736,6 +744,7 @@ class RespuestaMovimientoBalistico(BaseModel):
     justificacion_novedad: str
     numero_oficio_dcca: str | None = None
     firma_digital_sha256: str
+    hash_anterior_sha256: str | None = None
     fecha_movimiento: datetime
 
 

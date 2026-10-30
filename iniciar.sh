@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# SENTINEL // OPS - Script de Arranque Unificado para Git Bash
+# SENTINEL // OPS — Script de Arranque Táctico Portátil (Release Enterprise V3.5)
 # ==============================================================================
 
 RUTA_RAIZ="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$RUTA_RAIZ"
 
 echo "=========================================================="
-echo "   SENTINEL // OPS - Plataforma Táctica de Seguridad V2.0"
+echo "   SENTINEL // OPS — Centro de Mando Táctico B2B (V3.5)"
 echo "=========================================================="
 
 # 1. Iniciar Backend (FastAPI + Uvicorn)
@@ -15,6 +15,8 @@ echo "[1/2] Iniciando Backend en http://127.0.0.1:8000 ..."
 cd "$RUTA_RAIZ/backend"
 if [ -f ".venv/Scripts/activate" ]; then
     source .venv/Scripts/activate
+elif [ -f ".venv/bin/activate" ]; then
+    source .venv/bin/activate
 fi
 python -m uvicorn app.main:aplicacion --host 127.0.0.1 --port 8000 &
 PID_BACKEND=$!
@@ -27,4 +29,3 @@ npm run dev
 
 # Al cerrar el frontend, terminar el backend en segundo plano
 kill $PID_BACKEND 2>/dev/null || true
-

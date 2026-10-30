@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   base_datos_sentinel:
     image: postgres:15-alpine
@@ -18,7 +20,31 @@ services:
       timeout: 5s
       retries: 5
 
+  servidor_sentinel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sentinel_ops_servidor
+    restart: unless-stopped
+    depends_on:
+      base_datos_sentinel:
+        condition: service_healthy
+    environment:
+      ENTORNO: produccion
+      MODO_MULTI_TENANT: "True"
+      URL_BASE_DATOS_POSTGRES: postgresql+asyncpg://administrador_sentinel:clave_segura_sentinel_2026@base_datos_sentinel:5432/sentinel_ops_bd
+      CLAVE_SECRETA_JWT: sentinel_ops_clave_maestra_2026_seguridad_privada_colombia_hmac_sha256
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000,http://127.0.0.1:8000
+      TZ: America/Bogota
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
 volumes:
   volumen_datos_postgres:
     name: sentinel_ops_volumen_datos
-

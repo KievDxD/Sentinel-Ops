@@ -30,7 +30,11 @@ from app.modelos.modelos_bd import (
     TipoMovimientoBalistico,
 )
 from app.nucleo.base_datos import obtener_sesion_bd
-from app.nucleo.seguridad import requerir_roles
+from app.nucleo.seguridad import (
+    HASH_GENESIS_SHA256,
+    calcular_hash_encadenado_sha256,
+    requerir_roles,
+)
 
 enrutador_balistica = APIRouter(
     prefix="/api/balistica",
@@ -141,6 +145,13 @@ async def consultar_kardex_balistico(
     sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
 ) -> list[RespuestaMovimientoBalistico]:
     """Retorna los movimientos de munición y novedades balísticas foliadas."""
+    if _usuario_actual.rol == RolUsuario.CLIENTE and _usuario_actual.puesto_base_id:
+        if puesto_id != _usuario_actual.puesto_base_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene autorización para consultar el kardex balístico de otras sedes.",
+            )
+
     consulta = (
         select(ModeloKardexBalistico)
         .options(
@@ -178,6 +189,7 @@ async def consultar_kardex_balistico(
                 justificacion_novedad=m.justificacion_novedad,
                 numero_oficio_dcca=m.numero_oficio_dcca,
                 firma_digital_sha256=m.firma_digital_sha256,
+                hash_anterior_sha256=m.hash_anterior_sha256,
                 fecha_movimiento=m.fecha_movimiento,
             )
         )
@@ -201,7 +213,7 @@ async def registrar_movimiento_balistico(
     ),
     sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
 ) -> RespuestaMovimientoBalistico:
-    """Registra variación de cartuchos, actualiza dotación y firma digitalmente."""
+    """Registra variación de cartuchos, actualiza dotación y firma digitalmente con Blockchain Ligero."""
     consulta_dotacion = (
         select(ModeloDotacionPuesto)
         .options(selectinload(ModeloDotacionPuesto.puesto_vigilancia))
@@ -235,12 +247,30 @@ async def registrar_movimiento_balistico(
     dotacion.cantidad_municion_autorizada = nuevo_saldo
 
     fecha_ahora = datetime.now(timezone.utc)
+    # Hash Chaining Forense SHA-256
+    ultimo_kardex = (
+        await sesion_bd.execute(
+            select(ModeloKardexBalistico.firma_digital_sha256)
+            .where(ModeloKardexBalistico.puesto_id == solicitud.puesto_id)
+            .order_by(ModeloKardexBalistico.movimiento_id.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    hash_anterior = ultimo_kardex if ultimo_kardex else HASH_GENESIS_SHA256
+
     cadena_hash = f"{dotacion.dotacion_id}:{solicitud.tipo_movimiento.value}:{solicitud.cantidad_municion_afectada}:{nuevo_saldo}:{fecha_ahora.isoformat()}"
-    firma_sha = hashlib.sha256(cadena_hash.encode("utf-8")).hexdigest()
+    firma_sha = calcular_hash_encadenado_sha256(cadena_hash, hash_anterior)
+
+    puesto_tenant_id = (
+        dotacion.puesto_vigilancia.tenant_id
+        if dotacion.puesto_vigilancia and dotacion.puesto_vigilancia.tenant_id
+        else "TENANT-SENTINEL-DEMO"
+    )
 
     nuevo_mov = ModeloKardexBalistico(
         puesto_id=solicitud.puesto_id,
         dotacion_id=solicitud.dotacion_id,
+        tenant_id=puesto_tenant_id,
         operador_responsable_id=usuario_actual.usuario_id,
         tipo_movimiento=solicitud.tipo_movimiento,
         calibre=solicitud.calibre,
@@ -249,6 +279,7 @@ async def registrar_movimiento_balistico(
         justificacion_novedad=solicitud.justificacion_novedad,
         numero_oficio_dcca=solicitud.numero_oficio_dcca,
         firma_digital_sha256=firma_sha,
+        hash_anterior_sha256=hash_anterior,
         fecha_movimiento=fecha_ahora,
     )
 
@@ -274,6 +305,7 @@ async def registrar_movimiento_balistico(
         justificacion_novedad=nuevo_mov.justificacion_novedad,
         numero_oficio_dcca=nuevo_mov.numero_oficio_dcca,
         firma_digital_sha256=nuevo_mov.firma_digital_sha256,
+        hash_anterior_sha256=nuevo_mov.hash_anterior_sha256,
         fecha_movimiento=nuevo_mov.fecha_movimiento,
     )
 

@@ -68,6 +68,7 @@ def _verificar_y_sincronizar_esquema(conexion_sincrona: object) -> None:
             }
             if (
                 "numero_credencial_sv" not in columnas_usuarios
+                or "tenant_id" not in columnas_usuarios
                 or "dotacion_armamento_puesto" not in tablas_existentes
             ):
                 BaseModeloDeclarativo.metadata.drop_all(bind=conexion_sincrona)  # type: ignore[arg-type]

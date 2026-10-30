@@ -40,6 +40,7 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
   const [empresaDestino, setEmpresaDestino] = useState<string>("");
   const [motivoIngreso, setMotivoIngreso] = useState<string>("");
   const [observaciones, setObservaciones] = useState<string>("");
+  const [autorizaTratamientoDatos, setAutorizaTratamientoDatos] = useState<boolean>(true);
   const [registrando, setRegistrando] = useState<boolean>(false);
   const [escaneandoPlaca, setEscaneandoPlaca] = useState<boolean>(false);
 
@@ -162,6 +163,7 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
         placa_vehiculo: placaVehiculo || undefined,
         empresa_o_destino: empresaDestino,
         motivo_ingreso: motivoIngreso,
+        autoriza_tratamiento_datos: autorizaTratamientoDatos,
         observaciones: observaciones || undefined,
       });
 
@@ -474,9 +476,22 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
               />
             </div>
 
+            <div className="flex items-start gap-2 pt-1 pb-1">
+              <input
+                type="checkbox"
+                id="check-habeas-data"
+                checked={autorizaTratamientoDatos}
+                onChange={(e) => setAutorizaTratamientoDatos(e.target.checked)}
+                className="mt-0.5 rounded border-slate-700 bg-slate-950 text-sky-500 focus:ring-0"
+              />
+              <label htmlFor="check-habeas-data" className="text-[10px] text-slate-300 font-mono leading-tight cursor-pointer">
+                Consentimiento Expreso Habeas Data (Ley 1581 de 2012): Autorizo el tratamiento de mis datos de ingreso y control de seguridad.
+              </label>
+            </div>
+
             <button
               type="submit"
-              disabled={registrando}
+              disabled={registrando || !autorizaTratamientoDatos}
               className="w-full py-2.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition shadow-md shadow-sky-950/50 mt-2"
             >
               {registrando ? "Registrando..." : "Autorizar Ingreso y Abrir Barrera"}

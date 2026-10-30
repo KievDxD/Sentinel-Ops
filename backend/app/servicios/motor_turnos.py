@@ -60,6 +60,32 @@ def es_hora_nocturna_colombia(instante: datetime) -> bool:
     )
 
 
+def fragmentar_turno_por_dia_calendario(
+    fecha_inicio: datetime, fecha_fin: datetime
+) -> list[tuple[datetime, datetime]]:
+    """
+    Fragmenta un turno en segmentos delimitados por la medianoche (00:00:00).
+    Permite calcular recargos por día calendario antes de liquidar (ej: domingo a lunes).
+    """
+    inicio_loc = fecha_inicio.astimezone(ZONA_HORARIA_COLOMBIA)
+    fin_loc = fecha_fin.astimezone(ZONA_HORARIA_COLOMBIA)
+    if fin_loc <= inicio_loc:
+        return []
+
+    segmentos: list[tuple[datetime, datetime]] = []
+    cursor_inicio = inicio_loc
+
+    while cursor_inicio < fin_loc:
+        medianoche_siguiente = (cursor_inicio + timedelta(days=1)).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        corte = min(medianoche_siguiente, fin_loc)
+        segmentos.append((cursor_inicio, corte))
+        cursor_inicio = corte
+
+    return segmentos
+
+
 def calcular_liquidacion_turno_colombia(
     fecha_inicio: datetime,
     fecha_fin: datetime,

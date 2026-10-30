@@ -267,6 +267,8 @@ export interface RegistroMinuta {
   nombre_visitante: string | null;
   documento_visitante: string | null;
   placa_vehiculo: string | null;
+  sello_sha256?: string | null;
+  hash_anterior_sha256?: string | null;
   fecha_registro: string;
 }
 
@@ -364,6 +366,7 @@ export interface ActaRelevoPuesto {
   estado_linterna_y_llaves: EstadoItemDotacion;
   observaciones_relevo: string;
   sello_sha256: string;
+  hash_anterior_sha256?: string | null;
   alerta_disparada: boolean;
   fecha_acta: string;
 }
@@ -561,6 +564,7 @@ export interface SolicitudRegistrarAccesoGarita {
   placa_vehiculo?: string;
   empresa_o_destino: string;
   motivo_ingreso: string;
+  autoriza_tratamiento_datos?: boolean;
   observaciones?: string;
 }
 
@@ -581,6 +585,7 @@ export interface RegistroAccesoGarita {
   motivo_ingreso: string;
   es_sospechoso_alerta: boolean;
   estado_acceso: EstadoAccesoGarita;
+  autoriza_tratamiento_datos?: boolean;
   fecha_ingreso: string;
   fecha_salida: string | null;
   observaciones: string | null;
@@ -620,6 +625,7 @@ export interface MovimientoBalistico {
   justificacion_novedad: string;
   numero_oficio_dcca: string | null;
   firma_digital_sha256: string;
+  hash_anterior_sha256?: string | null;
   fecha_movimiento: string;
 }
 

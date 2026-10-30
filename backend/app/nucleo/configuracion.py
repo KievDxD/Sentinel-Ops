@@ -9,12 +9,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class ConfiguracionSistema(BaseSettings):
     """Parámetros de configuración del entorno de ejecución del servidor."""
 
-    nombre_proyecto: str = "SENTINEL // OPS - API Central Enterprise V3.0"
-    version_api: str = "3.0.0"
+    nombre_proyecto: str = "SENTINEL // OPS - API Central Enterprise V3.5"
+    version_api: str = "3.5.0"
 
     # Soporte Multi-Tenant SaaS (Fase 12)
     modo_multi_tenant: bool = True
     tenant_id_predeterminado: str = "EMPRESA-SEGURIDAD-COLOMBIA-01"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
     # Conexión principal a PostgreSQL 15 definida en docker-compose.yml
     url_base_datos_postgres: str = (
@@ -33,6 +34,8 @@ class ConfiguracionSistema(BaseSettings):
     dias_expiracion_refresco: int = 7
 
     # Parámetros de normativa laboral colombiana (Ley 2101 de 2021, Ley 1920 y CST)
+    smlmv_vigente: float = 1_423_500.0
+    auxilio_transporte_vigente: float = 200_000.0
     tope_horas_semanales: int = 42
     hora_inicio_nocturno: int = 21
     hora_fin_nocturno: int = 6

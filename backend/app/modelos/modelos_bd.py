@@ -223,9 +223,12 @@ class ModeloUsuario(BaseModeloDeclarativo):
     excepcion_credencial_autorizada: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fecha_creacion: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=obtener_hora_utc, nullable=False
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
     )
 
     turnos_asignados: Mapped[list["ModeloTurno"]] = relationship(
@@ -258,6 +261,9 @@ class ModeloPuestoVigilancia(BaseModeloDeclarativo):
     )
     requiere_armamento: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
     )
     activo: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
@@ -367,8 +373,17 @@ class ModeloRegistroMinuta(BaseModeloDeclarativo):
     titulo_evento: Mapped[str] = mapped_column(String(150), nullable=False)
     descripcion_detallada: Mapped[str] = mapped_column(Text, nullable=False)
     nombre_visitante: Mapped[str | None] = mapped_column(String(120), nullable=True)
-    documento_visitante: Mapped[str | None] = mapped_column(String(40), nullable=True)
-    placa_vehiculo: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    documento_visitante: Mapped[str | None] = mapped_column(
+        String(40), index=True, nullable=True
+    )
+    placa_vehiculo: Mapped[str | None] = mapped_column(
+        String(20), index=True, nullable=True
+    )
+    sello_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    hash_anterior_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
     fecha_registro: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
     )
@@ -533,6 +548,10 @@ class ModeloDotacionPuesto(BaseModeloDeclarativo):
         Boolean, default=True, nullable=False
     )
 
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+
 
 class ModeloActaRelevoPuesto(BaseModeloDeclarativo):
     """
@@ -576,6 +595,10 @@ class ModeloActaRelevoPuesto(BaseModeloDeclarativo):
     )
     observaciones_relevo: Mapped[str] = mapped_column(Text, nullable=False)
     sello_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    hash_anterior_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
     alerta_disparada: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False
     )
@@ -736,14 +759,22 @@ class ModeloRegistroAccesoGarita(BaseModeloDeclarativo):
     nombres: Mapped[str] = mapped_column(String(100), nullable=False)
     apellidos: Mapped[str] = mapped_column(String(100), nullable=False)
     tipo_sangre_rh: Mapped[str | None] = mapped_column(String(10), nullable=True)
-    placa_vehiculo: Mapped[str | None] = mapped_column(String(15), nullable=True)
+    placa_vehiculo: Mapped[str | None] = mapped_column(
+        String(15), index=True, nullable=True
+    )
     empresa_o_destino: Mapped[str] = mapped_column(String(120), nullable=False)
     motivo_ingreso: Mapped[str] = mapped_column(String(200), nullable=False)
+    autoriza_tratamiento_datos: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
     es_sospechoso_alerta: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     estado_acceso: Mapped[EstadoAccesoGarita] = mapped_column(
         SqlEnum(EstadoAccesoGarita, name="enum_estado_acceso_garita"),
         default=EstadoAccesoGarita.DENTRO,
         nullable=False,
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
     )
     fecha_ingreso: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
@@ -790,6 +821,10 @@ class ModeloKardexBalistico(BaseModeloDeclarativo):
     justificacion_novedad: Mapped[str] = mapped_column(Text, nullable=False)
     numero_oficio_dcca: Mapped[str | None] = mapped_column(String(50), nullable=True)
     firma_digital_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    hash_anterior_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
     fecha_movimiento: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
     )

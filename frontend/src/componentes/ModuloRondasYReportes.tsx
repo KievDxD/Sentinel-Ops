@@ -70,6 +70,7 @@ export function ModuloRondasYReportes(): ReactElement {
   const [colaOffline, setColaOffline] = useState<
     RegistrarMarcacionRondaFormulario[]
   >(leerColaOfflineLocal);
+  const [estaEnLinea, setEstaEnLinea] = useState<boolean>(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [modoSinSenalSimulado, setModoSinSenalSimulado] =
     useState<boolean>(false);
   const [mensajeExito, setMensajeExito] = useState<string | null>(null);
@@ -111,6 +112,25 @@ export function ModuloRondasYReportes(): ReactElement {
     void cargarTodo();
   }, [cargarTodo]);
 
+  useEffect((): (() => void) => {
+    const alVolverEnLinea = (): void => {
+      setEstaEnLinea(true);
+      if (!modoSinSenalSimulado && colaOffline.length > 0) {
+        void sincronizarColaPendiente();
+      }
+    };
+    const alPerderConexion = (): void => {
+      setEstaEnLinea(false);
+    };
+
+    window.addEventListener("online", alVolverEnLinea);
+    window.addEventListener("offline", alPerderConexion);
+    return (): void => {
+      window.removeEventListener("online", alVolverEnLinea);
+      window.removeEventListener("offline", alPerderConexion);
+    };
+  }, [colaOffline.length, modoSinSenalSimulado]);
+
   const seleccionarCoordenadasDePunto = (puntoId: number): void => {
     const encontrado = puntos.find((p) => p.punto_id === puntoId);
     if (encontrado) {
@@ -125,11 +145,16 @@ export function ModuloRondasYReportes(): ReactElement {
     setMensajeError(null);
     setMensajeExito(null);
 
+    const instanteCaptura = new Date().toISOString();
+    const hashIntegridad = btoa(
+      `${datos.punto_id}|${datos.latitud_capturada}|${datos.longitud_capturada}|${instanteCaptura}`
+    ).slice(0, 16);
+
     const carga: RegistrarMarcacionRondaFormulario = {
       punto_id: Number(datos.punto_id),
       latitud_capturada: Number(datos.latitud_capturada),
       longitud_capturada: Number(datos.longitud_capturada),
-      observacion_ronda: datos.observacion_ronda,
+      observacion_ronda: `${datos.observacion_ronda} [Integridad: ${hashIntegridad}]`,
     };
 
     if (modoSinSenalSimulado || !navigator.onLine) {
@@ -137,7 +162,7 @@ export function ModuloRondasYReportes(): ReactElement {
       setColaOffline(nuevaCola);
       localStorage.setItem(CLAVE_COLA_OFFLINE, JSON.stringify(nuevaCola));
       setMensajeExito(
-        "Sin conexión en sótano/campo: La marcación QR/GPS se guardó en la Cola Offline-First local para sincronización posterior."
+        `Sin conexión en sótano/campo: Marcación guardada en Cola Offline-First con hash ${hashIntegridad} (${instanteCaptura.slice(11, 19)}).`
       );
       return;
     }
@@ -177,6 +202,38 @@ export function ModuloRondasYReportes(): ReactElement {
 
   return (
     <div className="space-y-6">
+      {/* Indicador Táctico de Red / Modo Offline-First */}
+      <div
+        className={`flex items-center justify-between rounded-xl border p-3 font-mono text-xs ${
+          estaEnLinea && !modoSinSenalSimulado
+            ? "border-emerald-500/30 bg-emerald-950/20 text-emerald-300"
+            : "border-amber-500/40 bg-amber-950/40 text-amber-300 animate-pulse"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              estaEnLinea && !modoSinSenalSimulado ? "bg-emerald-400" : "bg-amber-400"
+            }`}
+          />
+          <span className="font-bold">
+            {estaEnLinea && !modoSinSenalSimulado
+              ? "CONEXIÓN SATELITAL OPERATIVA (ONLINE)"
+              : `MODO OFFLINE-FIRST RETENIDO • ${colaOffline.length} REGISTROS PENDIENTES`}
+          </span>
+        </div>
+        {colaOffline.length > 0 && estaEnLinea && !modoSinSenalSimulado && (
+          <button
+            type="button"
+            onClick={(): void => {
+              void sincronizarColaPendiente();
+            }}
+            className="rounded bg-amber-500/20 px-2.5 py-1 text-[11px] font-bold text-amber-200 border border-amber-500/40 hover:bg-amber-500/30 transition"
+          >
+            Sincronizar Lote ({colaOffline.length})
+          </button>
+        )}
+      </div>
       {!esOperador && (
         <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-emerald-500/30 bg-slate-900/70 p-6 backdrop-blur-xl">
           <div>

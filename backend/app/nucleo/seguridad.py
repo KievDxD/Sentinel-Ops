@@ -6,6 +6,7 @@ y dependencias de autorización por rol para FastAPI.
 
 from collections.abc import Callable, Coroutine
 from datetime import datetime, timedelta, timezone
+import hashlib
 from typing import Any
 
 import bcrypt
@@ -198,4 +199,36 @@ def requerir_roles(
         return usuario_actual
 
     return validador_rol
+
+
+HASH_GENESIS_SHA256: str = "0" * 64
+
+
+def calcular_hash_encadenado_sha256(
+    datos_actuales: str, hash_anterior: str | None = None
+) -> str:
+    """
+    Calcula un sello SHA-256 encadenado (Hash Chaining / Blockchain ligero) vinculando
+    el payload actual con el hash del registro inmediatamente anterior del mismo puesto o tenant.
+    Si es el primer registro de la cadena, utiliza el hash génesis ('0' * 64).
+    """
+    eslabon_previo = (
+        hash_anterior.strip().upper()
+        if hash_anterior and len(hash_anterior.strip()) == 64
+        else HASH_GENESIS_SHA256
+    )
+    trama_encadenada = f"{datos_actuales}|PREV:{eslabon_previo}"
+    return hashlib.sha256(trama_encadenada.encode("utf-8")).hexdigest().upper()
+
+
+def enmascarar_dato_sensible(texto: str, caracteres_visibles: int = 2) -> str:
+    """
+    Enmascara parcialmente números de documento o datos sensibles en logs operativos
+    en cumplimiento de la Ley Estatutaria 1581 de 2012 (Habeas Data).
+    """
+    limpio = texto.strip()
+    if len(limpio) <= caracteres_visibles * 2:
+        return "*" * len(limpio)
+    return f"{limpio[:caracteres_visibles]}{'*' * (len(limpio) - (caracteres_visibles * 2))}{limpio[-caracteres_visibles:]}"
+
 

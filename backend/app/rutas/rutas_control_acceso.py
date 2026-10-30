@@ -167,6 +167,7 @@ async def registrar_ingreso_garita(
 
     nuevo_acceso = ModeloRegistroAccesoGarita(
         puesto_id=solicitud.puesto_id,
+        tenant_id=getattr(puesto, "tenant_id", "TENANT-SENTINEL-DEMO") or "TENANT-SENTINEL-DEMO",
         operador_id=usuario_actual.usuario_id,
         tipo_acceso=solicitud.tipo_acceso,
         documento_identidad=solicitud.documento_identidad.strip(),
@@ -178,6 +179,7 @@ async def registrar_ingreso_garita(
         motivo_ingreso=solicitud.motivo_ingreso.strip(),
         es_sospechoso_alerta=False,
         estado_acceso=EstadoAccesoGarita.DENTRO,
+        autoriza_tratamiento_datos=solicitud.autoriza_tratamiento_datos,
         fecha_ingreso=datetime.now(timezone.utc),
         observaciones=solicitud.observaciones,
     )
@@ -203,6 +205,7 @@ async def registrar_ingreso_garita(
         motivo_ingreso=nuevo_acceso.motivo_ingreso,
         es_sospechoso_alerta=nuevo_acceso.es_sospechoso_alerta,
         estado_acceso=nuevo_acceso.estado_acceso,
+        autoriza_tratamiento_datos=nuevo_acceso.autoriza_tratamiento_datos,
         fecha_ingreso=nuevo_acceso.fecha_ingreso,
         fecha_salida=nuevo_acceso.fecha_salida,
         observaciones=nuevo_acceso.observaciones,
@@ -274,6 +277,7 @@ async def registrar_salida_garita(
         motivo_ingreso=acceso.motivo_ingreso,
         es_sospechoso_alerta=acceso.es_sospechoso_alerta,
         estado_acceso=acceso.estado_acceso,
+        autoriza_tratamiento_datos=acceso.autoriza_tratamiento_datos,
         fecha_ingreso=acceso.fecha_ingreso,
         fecha_salida=acceso.fecha_salida,
         observaciones=acceso.observaciones,
@@ -298,6 +302,13 @@ async def listar_activos_en_puesto(
     sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
 ) -> list[RespuestaAccesoGarita]:
     """Retorna personas y vehículos con estado DENTRO."""
+    if _usuario_actual.rol == RolUsuario.CLIENTE and _usuario_actual.puesto_base_id:
+        if puesto_id != _usuario_actual.puesto_base_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene autorización para consultar los accesos de otras sedes.",
+            )
+
     consulta = (
         select(ModeloRegistroAccesoGarita)
         .options(
@@ -335,6 +346,7 @@ async def listar_activos_en_puesto(
                 motivo_ingreso=a.motivo_ingreso,
                 es_sospechoso_alerta=a.es_sospechoso_alerta,
                 estado_acceso=a.estado_acceso,
+                autoriza_tratamiento_datos=a.autoriza_tratamiento_datos,
                 fecha_ingreso=a.fecha_ingreso,
                 fecha_salida=a.fecha_salida,
                 observaciones=a.observaciones,
@@ -362,6 +374,16 @@ async def consultar_historial_accesos(
     sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
 ) -> list[RespuestaAccesoGarita]:
     """Retorna los últimos registros de acceso para auditoría."""
+    if usuario_actual.rol == RolUsuario.CLIENTE:
+        if puesto_id is not None and usuario_actual.puesto_base_id is not None:
+            if puesto_id != usuario_actual.puesto_base_id:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="No tiene autorización para consultar accesos de otras sedes.",
+                )
+        if usuario_actual.puesto_base_id:
+            puesto_id = usuario_actual.puesto_base_id
+
     consulta = (
         select(ModeloRegistroAccesoGarita)
         .options(
@@ -400,6 +422,7 @@ async def consultar_historial_accesos(
                 motivo_ingreso=a.motivo_ingreso,
                 es_sospechoso_alerta=a.es_sospechoso_alerta,
                 estado_acceso=a.estado_acceso,
+                autoriza_tratamiento_datos=a.autoriza_tratamiento_datos,
                 fecha_ingreso=a.fecha_ingreso,
                 fecha_salida=a.fecha_salida,
                 observaciones=a.observaciones,

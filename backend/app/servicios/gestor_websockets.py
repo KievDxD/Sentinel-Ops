@@ -1,7 +1,7 @@
 """
 Gestor central de conexiones WebSocket para la Minuta Digital en Tiempo Real.
 Permite difundir instantáneamente nuevos registros de minuta a todos los paneles
-de Supervisores, Administradores y Operadores conectados.
+de Supervisores, Administradores y Operadores conectados con resiliencia anti-desconexión.
 """
 
 from typing import Any
@@ -9,24 +9,37 @@ from fastapi import WebSocket
 
 
 class GestorMinutaWebSocket:
-    """Administra las conexiones activas de WebSockets y la difusión de eventos."""
+    """Administra las conexiones activas de WebSockets y la difusión de eventos con limpieza automática."""
 
     def __init__(self) -> None:
         self.conexiones_activas: list[WebSocket] = []
 
     async def conectar_cliente(self, websocket: WebSocket) -> None:
-        """Acepta y registra una nueva conexión WebSocket entrante."""
+        """Acepta y registra una nueva conexión WebSocket entrante si no está ya agregada."""
         await websocket.accept()
-        self.conexiones_activas.append(websocket)
+        if websocket not in self.conexiones_activas:
+            self.conexiones_activas.append(websocket)
 
     def desconectar_cliente(self, websocket: WebSocket) -> None:
-        """Elimina una conexión WebSocket cerrada del registro activo."""
-        if websocket in self.conexiones_activas:
-            self.conexiones_activas.remove(websocket)
+        """Elimina de manera segura una conexión WebSocket cerrada del registro activo."""
+        try:
+            if websocket in self.conexiones_activas:
+                self.conexiones_activas.remove(websocket)
+        except Exception:
+            pass
 
     def cantidad_conectados(self) -> int:
         """Retorna el número de paneles conectados en vivo."""
         return len(self.conexiones_activas)
+
+    def limpiar_conexiones_muertas(self) -> None:
+        """Elimina referencias a sockets que ya no están en estado conectado."""
+        self.conexiones_activas = [
+            ws
+            for ws in self.conexiones_activas
+            if getattr(ws, "client_state", None) is not None
+            and getattr(ws.client_state, "name", "") == "CONNECTED"
+        ]
 
     async def difundir_evento_minuta(self, carga_evento: dict[str, Any]) -> None:
         """
@@ -34,7 +47,7 @@ class GestorMinutaWebSocket:
         Limpia automáticamente cualquier socket que haya perdido conexión.
         """
         conexiones_caidas: list[WebSocket] = []
-        for conexion in self.conexiones_activas:
+        for conexion in list(self.conexiones_activas):
             try:
                 await conexion.send_json(carga_evento)
             except Exception:
@@ -45,4 +58,3 @@ class GestorMinutaWebSocket:
 
 
 gestor_minuta_ws: GestorMinutaWebSocket = GestorMinutaWebSocket()
-
