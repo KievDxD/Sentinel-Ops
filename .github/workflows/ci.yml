@@ -57,3 +57,4 @@ jobs:
       - name: Verificar Tipado TypeScript y Compilar Bundle Vite
         run: |
           npm --prefix frontend run build
+
