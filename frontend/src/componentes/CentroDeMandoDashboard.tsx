@@ -26,18 +26,14 @@ import {
   Moon,
   Coffee,
   Radio,
-  QrCode,
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  TrendingUp,
   MapPin,
-  Clock,
   Shield,
   Siren,
   FileSpreadsheet,
   FileCheck2,
-  Award,
   ClipboardCheck,
 } from "lucide-react";
 import {
@@ -446,9 +442,9 @@ export function CentroDeMandoDashboard(): ReactElement {
               onClick={(): void => {
                 void servicioDescargarPrenominaCsv();
               }}
-              className="boton-tactico-campo inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-950 transition hover:bg-emerald-400 shadow-lg shadow-emerald-500/20"
+              className="boton-tactico-campo inline-flex items-center gap-2 rounded-lg bg-[#FAFAFA] px-3.5 py-2 text-xs font-semibold text-[#09090B] transition duration-150 hover:bg-zinc-200"
             >
-              <FileSpreadsheet className="h-4 w-4" />
+              <FileSpreadsheet className="h-3.5 w-3.5" />
               <span>Exportar Prenómina Ley 2101 (CSV)</span>
             </button>
           )}
@@ -461,9 +457,9 @@ export function CentroDeMandoDashboard(): ReactElement {
               onClick={(): void => {
                 void servicioAbrirLibroFoliadoOficial();
               }}
-              className="boton-tactico-campo inline-flex items-center gap-2 rounded-xl border border-cyan-500/40 bg-cyan-500/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-cyan-200 transition hover:bg-cyan-500/25"
+              className="boton-tactico-campo inline-flex items-center gap-2 rounded-lg border border-white/[0.08] bg-[#111113] px-3.5 py-2 text-xs font-medium text-[#FAFAFA] transition duration-150 hover:bg-[#18181B]"
             >
-              <FileCheck2 className="h-4 w-4 text-cyan-300" />
+              <FileCheck2 className="h-3.5 w-3.5 text-zinc-400" />
               <span>
                 {esCliente
                   ? "Descargar Libro Foliado SHA-256 del Puesto"
@@ -475,15 +471,15 @@ export function CentroDeMandoDashboard(): ReactElement {
       </div>
 
       {mensajeError && (
-        <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/30 p-4 text-sm text-rose-200">
-          <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-[#EF4444]/40 bg-[#EF4444]/10 p-4 text-sm text-red-200">
+          <AlertTriangle className="h-5 w-5 text-[#EF4444] shrink-0" />
           <span>{mensajeError}</span>
         </div>
       )}
 
       {mensajeExito && (
-        <div className="flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-950/40 p-4 text-sm font-bold text-emerald-200">
-          <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+        <div className="flex items-center gap-2 rounded-xl border border-[#10B981]/40 bg-[#10B981]/10 p-4 text-sm font-medium text-[#10B981]">
+          <CheckCircle2 className="h-5 w-5 text-[#10B981] shrink-0" />
           <span>{mensajeExito}</span>
         </div>
       )}
@@ -493,49 +489,40 @@ export function CentroDeMandoDashboard(): ReactElement {
       {/* ================================================================= */}
       {esOperador && (
         <div className="space-y-6">
-          {/* KPIs del Guarda con Semáforo SuperVigilancia */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-cyan-500/30 bg-slate-900/70 p-4">
-              <div className="flex items-center justify-between text-cyan-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Mi Puesto Asignado
-                </span>
-                <Building2 className="h-4 w-4" />
-              </div>
-              <p className="mt-2 text-lg font-black text-white">
+          {/* Barra Unificada del Guarda con Semáforo SuperVigilancia */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-white/[0.07] bg-[#111113] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] divide-y sm:divide-y-0 sm:divide-x divide-white/[0.07]">
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Mi Puesto Asignado
+              </span>
+              <p className="mt-1.5 text-lg font-semibold font-mono text-[#FAFAFA] tabular-nums">
                 {puestosVisibles[0]?.codigo_puesto ?? "PST-BOG-01"}
               </p>
-              <span className="text-xs text-slate-300 block truncate">
+              <span className="text-xs text-zinc-400 block truncate">
                 {puestosVisibles[0]?.nombre_puesto ?? "Centro Empresarial"}
               </span>
             </div>
 
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4">
-              <div className="flex items-center justify-between text-amber-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Mi Turno 2x2 Hoy
-                </span>
-                <Clock className="h-4 w-4" />
-              </div>
-              <p className="mt-2 text-lg font-black text-amber-200">
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Mi Turno 2x2 Hoy
+              </span>
+              <p className="mt-1.5 text-lg font-semibold font-mono text-[#F59E0B] tabular-nums">
                 {miTurnoHoy ? `${miTurnoHoy.tipo_turno} (12H)` : "EN RELEVO"}
               </p>
-              <span className="text-xs text-amber-300/80">
+              <span className="text-xs font-mono text-zinc-400">
                 {miTurnoHoy?.tipo_turno === "DIURNO"
                   ? "06:00 a 18:00"
                   : miTurnoHoy?.tipo_turno === "NOCTURNO"
                     ? "18:00 a 06:00"
-                    : "Descanso Compensatorio 24h"}
+                    : "Descanso 24h"}
               </span>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-              <div className="flex items-center justify-between text-slate-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Acreditación SuperVigilancia
-                </span>
-                <Award className="h-4 w-4 text-emerald-400" />
-              </div>
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Acreditación SuperVigilancia
+              </span>
               {(() => {
                 const sem = evaluarSemaforoCredencialSv(
                   usuarioActual?.fecha_vencimiento_credencial,
@@ -544,11 +531,11 @@ export function CentroDeMandoDashboard(): ReactElement {
                 return (
                   <>
                     <span
-                      className={`mt-2 inline-block rounded border px-2 py-0.5 text-xs font-black ${sem.claseColor}`}
+                      className={`mt-1.5 inline-block rounded border px-2 py-0.5 font-mono text-xs font-medium ${sem.claseColor}`}
                     >
                       {sem.etiqueta}
                     </span>
-                    <span className="mt-1 block text-[11px] text-slate-400 font-mono">
+                    <span className="mt-1 block text-[11px] text-zinc-500 font-mono tabular-nums">
                       {usuarioActual?.numero_credencial_sv ?? "SV-2026"} •{" "}
                       {usuarioActual?.nivel_curso ?? "FUNDAMENTACION"}
                     </span>
@@ -557,21 +544,18 @@ export function CentroDeMandoDashboard(): ReactElement {
               })()}
             </div>
 
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/25 p-4">
-              <div className="flex items-center justify-between text-emerald-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Devengado Ley 2101 (42h)
-                </span>
-                <TrendingUp className="h-4 w-4" />
-              </div>
-              <p className="mt-2 text-lg font-black text-emerald-300">
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Devengado Ley 2101 (42h)
+              </span>
+              <p className="mt-1.5 text-lg font-semibold font-mono text-[#10B981] tabular-nums">
                 {resumenTurnos
                   ? formatearPesosColombianos(
                       resumenTurnos.costo_total_estimado_cop
                     )
                   : "$0"}
               </p>
-              <span className="text-xs text-emerald-400/80">
+              <span className="text-xs font-mono text-zinc-400 tabular-nums">
                 {resumenTurnos?.suma_horas_trabajadas ?? 0}h trabajadas
               </span>
             </div>
@@ -822,7 +806,7 @@ export function CentroDeMandoDashboard(): ReactElement {
                 onClick={(): void => {
                   void enviarActaEntregaPuesto();
                 }}
-                className="boton-tactico-campo mt-4 w-full rounded-xl bg-emerald-500 py-3 text-xs font-black uppercase tracking-wider text-slate-950 hover:bg-emerald-400 transition"
+                className="boton-tactico-campo mt-4 w-full rounded-lg bg-[#FAFAFA] py-3 text-xs font-semibold uppercase tracking-wider text-[#09090B] hover:bg-zinc-200 transition duration-150"
               >
                 {guardandoActa
                   ? "Firmando Criptográficamente con SHA-256..."
@@ -838,55 +822,55 @@ export function CentroDeMandoDashboard(): ReactElement {
       {/* ================================================================= */}
       {esCliente && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-sky-500/40 bg-sky-950/20 p-4">
-              <span className="text-[11px] font-bold uppercase text-sky-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 rounded-xl border border-white/[0.07] bg-[#111113] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] divide-y sm:divide-y-0 sm:divide-x divide-white/[0.07]">
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
                 Instalación Contratada
               </span>
-              <p className="mt-1 text-lg font-black text-white">
+              <p className="mt-1.5 text-lg font-semibold font-mono text-[#FAFAFA] tabular-nums">
                 {puestosVisibles[0]?.codigo_puesto ?? "PST-BOG-01"}
               </p>
-              <span className="text-xs text-slate-300">
+              <span className="text-xs text-zinc-400 block truncate">
                 {puestosVisibles[0]?.nombre_puesto ??
                   "Centro Empresarial Torre Séptima"}
               </span>
             </div>
 
-            <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/20 p-4">
-              <span className="text-[11px] font-bold uppercase text-emerald-300">
-                Cumplimiento SLA Rondas QR/GPS
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Cumplimiento SLA Rondas QR
               </span>
-              <p className="mt-1 text-2xl font-black text-emerald-300">
+              <p className="mt-1.5 text-2xl font-semibold font-mono text-[#10B981] tabular-nums">
                 {porcentajeSlaRondas}%
               </p>
-              <span className="text-xs text-emerald-200/80">
-                Verificación geodésica Haversine activa
+              <span className="text-xs font-mono text-zinc-500">
+                Verificación geodésica Haversine
               </span>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-              <span className="text-[11px] font-bold uppercase text-slate-300">
-                Armamento & Salvoconducto Puesto
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
+                Armamento &amp; Salvoconducto
               </span>
-              <p className="mt-1 text-sm font-black text-white">
+              <p className="mt-1.5 text-sm font-semibold text-[#FAFAFA]">
                 {dotacionMiPuesto?.tipo_arma ?? "Revólver Llama Martial .38L"}
               </p>
-              <span className="text-xs font-mono text-cyan-300">
+              <span className="text-xs font-mono text-zinc-400 tabular-nums">
                 Indumil:{" "}
                 {dotacionMiPuesto?.numero_salvoconducto_indumil ??
                   "IND-TEN-2026-88412"}
               </span>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-4">
-              <span className="text-[11px] font-bold uppercase text-slate-300">
+            <div className="p-4">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 block">
                 Folios Públicos Auditados
               </span>
-              <p className="mt-1 text-2xl font-black text-white">
+              <p className="mt-1.5 text-2xl font-semibold font-mono text-[#FAFAFA] tabular-nums">
                 {ultimosRegistros.length}
               </p>
-              <span className="text-xs text-slate-400">
-                Cadena de custodia SHA-256 verificada
+              <span className="text-xs font-mono text-zinc-500">
+                Cadena SHA-256 verificada
               </span>
             </div>
           </div>
@@ -894,117 +878,123 @@ export function CentroDeMandoDashboard(): ReactElement {
       )}
 
       {/* ================================================================= */}
-      {/* VISTA 3: KPIs EJECUTIVOS, SUPERVISIÓN Y RRHH (CON BARRA LEY 2101) */}
+      {/* VISTA 3: BARRA DE TELEMETRÍA UNIFICADA ASIMÉTRICA (LINEAR/VERCEL) */}
       {/* ================================================================= */}
       {!esOperador && !esCliente && (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
-              <div className="flex items-center justify-between text-slate-400">
-                <span className="text-[11px] font-bold uppercase">
-                  Puestos Cubiertos 24/7
+          <div className="grid grid-cols-1 lg:grid-cols-12 rounded-xl border border-white/[0.07] bg-[#111113] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] divide-y lg:divide-y-0 lg:divide-x divide-white/[0.07]">
+            {/* Métrica Protagonista Asimétrica */}
+            <div className="lg:col-span-4 p-5 flex flex-col justify-between">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                  Net Payroll &amp; Ley 2101 (42h)
                 </span>
-                <Building2 className="h-4 w-4 text-cyan-400" />
-              </div>
-              <p className="mt-2 text-2xl font-black text-white">
-                {puestosCubiertosCount} / {puestos.length}
-              </p>
-              <span className="text-[11px] text-emerald-400 font-semibold">
-                Esquema 2x2 continuo activo
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-rose-500/30 bg-rose-950/20 p-4">
-              <div className="flex items-center justify-between text-rose-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Alertas SOS Activas
+                <span className="inline-flex items-center rounded border border-[#10B981]/30 bg-[#10B981]/10 px-2 py-0.5 font-mono text-[10px] font-medium text-[#10B981] tabular-nums">
+                  -{resumenTurnos?.suma_horas_descuento_ausentismo ?? 0}h ausentismo
                 </span>
-                <Siren className="h-4 w-4 text-rose-400" />
               </div>
-              <p className="mt-2 text-2xl font-black text-white">
-                {alertasSosActivasCount}
-              </p>
-              <span className="text-[11px] text-rose-300">
-                {alertasSos.length} eventos históricos registrados
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-amber-500/30 bg-amber-950/20 p-4">
-              <div className="flex items-center justify-between text-amber-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Credenciales SV Alerta
-                </span>
-                <Award className="h-4 w-4 text-amber-400" />
-              </div>
-              <p className="mt-2 text-2xl font-black text-amber-200">
-                {credencialesAlertaCount}
-              </p>
-              <span className="text-[11px] text-amber-300/80">
-                Por vencer (&lt;=30d) o vencidas
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-4">
-              <div className="flex items-center justify-between text-cyan-300">
-                <span className="text-[11px] font-bold uppercase">
-                  SLA Rondas QR/GPS
-                </span>
-                <QrCode className="h-4 w-4 text-cyan-400" />
-              </div>
-              <p className="mt-2 text-2xl font-black text-cyan-200">
-                {porcentajeSlaRondas}%
-              </p>
-              <span className="text-[11px] text-cyan-300/80">
-                Cumplimiento geocerca Haversine
-              </span>
-            </div>
-
-            <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/25 p-4">
-              <div className="flex items-center justify-between text-emerald-300">
-                <span className="text-[11px] font-bold uppercase">
-                  Nómina Ley 2101 (42h)
-                </span>
-                <TrendingUp className="h-4 w-4 text-emerald-400" />
-              </div>
-              <p className="mt-2 text-xl font-black text-emerald-300">
+              <p className="mt-2.5 text-3xl font-semibold tracking-tight text-[#FAFAFA] tabular-nums">
                 {resumenTurnos
                   ? formatearPesosColombianos(
                       resumenTurnos.costo_total_estimado_cop
                     )
                   : "$0"}
               </p>
-              <span className="text-[11px] text-emerald-400/80">
-                Desc. Ausentismo:{" "}
-                {resumenTurnos?.suma_horas_descuento_ausentismo ?? 0}h
+              <span className="mt-1 text-[11px] font-mono text-zinc-500">
+                Corte exacto medianoche • Tope {resumenTurnos?.tope_horas_semanales_aplicado ?? 42}h/sem
+              </span>
+            </div>
+
+            {/* Celdas Compactas y Densas */}
+            <div className="lg:col-span-2 p-4 flex flex-col justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                Puestos 24/7
+              </span>
+              <p className="mt-2 text-2xl font-semibold tracking-tight text-[#FAFAFA] font-mono tabular-nums">
+                {puestosCubiertosCount}
+                <span className="text-zinc-500 text-base">/{puestos.length}</span>
+              </p>
+              <span className="text-[11px] font-mono text-[#10B981]">
+                Esquema 2x2 activo
+              </span>
+            </div>
+
+            <div className="lg:col-span-2 p-4 flex flex-col justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                Alertas SOS
+              </span>
+              <p
+                className={`mt-2 text-2xl font-semibold tracking-tight font-mono tabular-nums ${
+                  alertasSosActivasCount > 0 ? "text-[#EF4444]" : "text-[#FAFAFA]"
+                }`}
+              >
+                {alertasSosActivasCount}
+              </p>
+              <span className="text-[11px] font-mono text-zinc-500 tabular-nums">
+                {alertasSos.length} históricos CAD
+              </span>
+            </div>
+
+            <div className="lg:col-span-2 p-4 flex flex-col justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                Credenciales SV
+              </span>
+              <p
+                className={`mt-2 text-2xl font-semibold tracking-tight font-mono tabular-nums ${
+                  credencialesAlertaCount > 0 ? "text-[#F59E0B]" : "text-[#FAFAFA]"
+                }`}
+              >
+                {credencialesAlertaCount}
+              </p>
+              <span className="text-[11px] font-mono text-zinc-500">
+                Vencidas o &lt;=30d
+              </span>
+            </div>
+
+            <div className="lg:col-span-2 p-4 flex flex-col justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                SLA Rondas QR
+              </span>
+              <p
+                className={`mt-2 text-2xl font-semibold tracking-tight font-mono tabular-nums ${
+                  porcentajeSlaRondas >= 80 ? "text-[#10B981]" : "text-[#F59E0B]"
+                }`}
+              >
+                {porcentajeSlaRondas}%
+              </p>
+              <span className="text-[11px] font-mono text-zinc-500">
+                Geocerca Haversine
               </span>
             </div>
           </div>
 
           {/* Barra Visual de Proporción Horas Ordinarias vs Extras y Recargos (Ley 2101 - 42h) */}
-          <div className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+          <div className="rounded-xl border border-white/[0.07] bg-[#111113] p-4 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="font-bold text-white">
-                Proporción de Horas Liquidadas (Tope Legal Semanal:{" "}
-                {resumenTurnos?.tope_horas_semanales_aplicado ?? 42} Horas — Ley
-                2101 de 2021)
+              <span className="font-medium text-[#FAFAFA] tracking-tight">
+                Proporción de Horas Liquidadas (Tope Semanal:{" "}
+                <span className="font-mono tabular-nums">
+                  {resumenTurnos?.tope_horas_semanales_aplicado ?? 42}h
+                </span>{" "}
+                — Ley 2101)
               </span>
-              <div className="flex items-center gap-4 text-[11px]">
-                <span className="text-emerald-300 font-semibold">
-                  ● Ordinarias Base: {horasOrd.toFixed(1)}h ({pctOrdinarias}%)
+              <div className="flex items-center gap-4 text-[11px] font-mono tabular-nums">
+                <span className="text-zinc-200">
+                  ● Ordinarias: {horasOrd.toFixed(1)}h ({pctOrdinarias}%)
                 </span>
-                <span className="text-amber-300 font-semibold">
-                  ● Extras (+25%/+75%) y Recargos Nocturnos/Festivos:{" "}
-                  {horasExtrasYRecargos.toFixed(1)}h ({pctRecargosExtras}%)
+                <span className="text-[#F59E0B]">
+                  ● Extras &amp; Recargos: {horasExtrasYRecargos.toFixed(1)}h (
+                  {pctRecargosExtras}%)
                 </span>
               </div>
             </div>
-            <div className="mt-2.5 h-3 w-full overflow-hidden rounded-full bg-slate-950 flex border border-white/10">
+            <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-[#09090B] flex border border-white/[0.07]">
               <div
-                className="bg-emerald-500 h-full transition-all"
+                className="bg-[#71717A] h-full transition-all"
                 style={{ width: `${pctOrdinarias}%` }}
               />
               <div
-                className="bg-amber-400 h-full transition-all"
+                className="bg-[#F59E0B] h-full transition-all"
                 style={{ width: `${pctRecargosExtras}%` }}
               />
             </div>
@@ -1013,124 +1003,166 @@ export function CentroDeMandoDashboard(): ReactElement {
       )}
 
       {/* ================================================================= */}
-      {/* PANEL V4.0: ANALÍTICA EN TIEMPO REAL, SLA MULTISEDE Y AUDITORÍA   */}
+      {/* PANEL DE TELEMETRÍA MONOCROMÁTICA & FILAS DE ESTADO VERCEL STATUS */}
       {/* ================================================================= */}
       {kpisVivo && !esOperador && (
-        <section className="rounded-2xl border border-emerald-500/30 bg-slate-900/75 p-5 shadow-xl backdrop-blur-xl space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+        <section className="rounded-xl border border-white/[0.07] bg-[#111113] p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/[0.07] pb-3.5">
             <div>
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                TELEMETRÍA & ANALÍTICA EJECUTIVA EN TIEMPO REAL (RELEASE V4.0)
+              <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-400">
+                TELEMETRY &amp; SITE STATUS (BOGOTÁ D.C. / SABANA)
               </span>
-              <h2 className="text-base font-bold text-white mt-0.5">
-                Cumplimiento SLA por Sede (Bogotá D.C. & Corredor Sabana de
-                Occidente) y Auditoría Blockchain SHA-256
+              <h2 className="text-base font-semibold tracking-tight text-[#FAFAFA] mt-0.5">
+                Volumen Operativo de Rondas &amp; Estado de Sedes
               </h2>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono font-bold text-emerald-300">
-                SLA Global: {kpisVivo.porcentaje_sla_global}%
+            <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono tabular-nums">
+              <span className="rounded-md border border-white/[0.07] bg-[#18181B] px-2.5 py-1 text-zinc-200">
+                SLA Global: <strong className="text-[#10B981]">{kpisVivo.porcentaje_sla_global}%</strong>
               </span>
-              <span className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2.5 py-1 font-mono font-bold text-cyan-300">
-                Reacción CAD SOS:{" "}
-                {kpisVivo.tiempo_promedio_reaccion_sos_segundos}s
+              <span className="rounded-md border border-white/[0.07] bg-[#18181B] px-2.5 py-1 text-zinc-200">
+                CAD Reaction: <strong className="text-[#FAFAFA]">{kpisVivo.tiempo_promedio_reaccion_sos_segundos}s</strong>
               </span>
-              <span className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 font-mono font-bold text-amber-300">
-                Aforo en Planta: {kpisVivo.ocupacion_perimetral_total} activos
+              <span className="rounded-md border border-white/[0.07] bg-[#18181B] px-2.5 py-1 text-zinc-200">
+                On-Site: <strong className="text-[#FAFAFA]">{kpisVivo.ocupacion_perimetral_total}</strong>
               </span>
             </div>
           </div>
 
-          {/* Barras de Progreso de SLA por cada Puesto */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {kpisVivo.sla_por_puesto.map((itemSla) => (
-              <div
-                key={itemSla.puesto_id}
-                className="rounded-xl border border-white/10 bg-slate-950/70 p-3.5 space-y-2"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="rounded bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-300">
-                    {itemSla.codigo_puesto}
-                  </span>
-                  <span className="text-[11px] font-mono text-slate-400">
-                    {itemSla.ciudad}
-                  </span>
-                </div>
-                <p className="text-xs font-bold text-white truncate">
-                  {itemSla.nombre_puesto}
-                </p>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">
-                    SLA Rondas ({itemSla.marcaciones_exitosas}/
-                    {itemSla.puntos_totales} checkpoints)
-                  </span>
-                  <span
-                    className={`font-mono font-bold ${
-                      itemSla.porcentaje_sla >= 80
-                        ? "text-emerald-400"
-                        : itemSla.porcentaje_sla >= 50
-                          ? "text-amber-300"
-                          : "text-rose-400"
-                    }`}
-                  >
-                    {itemSla.porcentaje_sla}%
-                  </span>
-                </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-900 border border-white/5">
-                  <div
-                    className={`h-full transition-all ${
-                      itemSla.porcentaje_sla >= 80
-                        ? "bg-emerald-500"
-                        : itemSla.porcentaje_sla >= 50
-                          ? "bg-amber-400"
-                          : "bg-rose-500"
-                    }`}
-                    style={{ width: `${Math.min(100, itemSla.porcentaje_sla)}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-white/5">
-                  <span>
-                    Visitantes/Vehículos Dentro:{" "}
-                    <strong className="text-white">
-                      {itemSla.visitantes_activos}
-                    </strong>
-                  </span>
-                  <span>
-                    {itemSla.requiere_armamento
-                      ? "Modalidad Armada"
-                      : "Canino / Tech"}
-                  </span>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+            {/* Gráfico Monocromático de Barras de Volumen/SLA con Tooltip Minimalista */}
+            <div className="lg:col-span-5 rounded-xl border border-white/[0.07] bg-[#09090B] p-4 flex flex-col justify-between">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                  Patrol Checkpoints &amp; SLA Velocity
+                </span>
+                <span className="text-[10px] font-mono text-zinc-500">
+                  Monochrome Zinc
+                </span>
               </div>
-            ))}
+
+              <div className="flex items-end gap-2.5 h-36 pt-6 border-b border-white/[0.07] pb-2">
+                {kpisVivo.sla_por_puesto.map((itemSla) => {
+                  const alturaPct = Math.max(14, Math.min(100, itemSla.porcentaje_sla));
+                  return (
+                    <div
+                      key={itemSla.puesto_id}
+                      className="group relative flex-1 flex flex-col items-center justify-end h-full"
+                    >
+                      {/* Tooltip flotante minimalista */}
+                      <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 absolute -top-7 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap rounded border border-white/[0.12] bg-[#18181B] px-2 py-1 text-[10px] font-mono text-[#FAFAFA] shadow-lg tabular-nums">
+                        {itemSla.codigo_puesto}: {itemSla.porcentaje_sla}% ({itemSla.marcaciones_exitosas}/{itemSla.puntos_totales})
+                      </div>
+                      <div
+                        className="w-full rounded-t bg-[#3F3F46] group-hover:bg-[#FAFAFA] transition-colors duration-150 relative"
+                        style={{ height: `${alturaPct}%` }}
+                      >
+                        {itemSla.porcentaje_sla < 75 && (
+                          <span
+                            title="Debajo del umbral 75%"
+                            className="absolute -top-1.5 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-[#F59E0B]"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between gap-2 pt-2">
+                {kpisVivo.sla_por_puesto.map((itemSla) => (
+                  <span
+                    key={itemSla.puesto_id}
+                    className="flex-1 text-center font-mono text-[9px] text-zinc-500 truncate tabular-nums"
+                  >
+                    {itemSla.codigo_puesto.replace("PST-", "")}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Filas Compactas estilo Vercel Status */}
+            <div className="lg:col-span-7 rounded-xl border border-white/[0.07] bg-[#09090B] divide-y divide-white/[0.07]">
+              {kpisVivo.sla_por_puesto.map((itemSla) => {
+                const esSaludable = itemSla.porcentaje_sla >= 80;
+                const esAdvertencia =
+                  itemSla.porcentaje_sla >= 50 && itemSla.porcentaje_sla < 80;
+                return (
+                  <div
+                    key={itemSla.puesto_id}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs hover:bg-white/[0.02] transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span
+                        className={`h-2 w-2 rounded-full shrink-0 ${
+                          esSaludable
+                            ? "bg-[#10B981]"
+                            : esAdvertencia
+                              ? "bg-[#F59E0B]"
+                              : "bg-[#EF4444]"
+                        }`}
+                      />
+                      <span className="font-mono text-[11px] font-medium text-zinc-300 shrink-0 tabular-nums">
+                        {itemSla.codigo_puesto}
+                      </span>
+                      <span className="text-xs font-medium text-[#FAFAFA] truncate">
+                        {itemSla.nombre_puesto}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0 font-mono text-[11px] tabular-nums">
+                      <span className="hidden sm:inline text-zinc-500">
+                        {itemSla.visitantes_activos} on-site
+                      </span>
+                      <span className="text-zinc-400">
+                        {itemSla.marcaciones_exitosas}/{itemSla.puntos_totales}
+                      </span>
+                      <span
+                        className={`w-12 text-right font-semibold ${
+                          esSaludable
+                            ? "text-[#10B981]"
+                            : esAdvertencia
+                              ? "text-[#F59E0B]"
+                              : "text-[#EF4444]"
+                        }`}
+                      >
+                        {itemSla.porcentaje_sla}%
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Resumen de Auditoría Criptográfica SHA-256 y Alertas Preventivas */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs">
+          {/* Resumen Criptográfico SHA-256 sin ruido visual */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-[#09090B] px-4 py-2.5 text-xs font-mono tabular-nums">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="text-emerald-400 font-bold">
+              <span
+                className={
+                  kpisVivo.integridad_blockchain.INTEGRIDAD_VERIFICADA
+                    ? "text-[#10B981] font-medium"
+                    : "text-[#EF4444] font-medium"
+                }
+              >
                 ● INTEGRIDAD_VERIFICADA:{" "}
                 {kpisVivo.integridad_blockchain.INTEGRIDAD_VERIFICADA
                   ? "TRUE"
                   : "FALSE"}
               </span>
-              <span className="text-slate-400 font-mono text-[11px]">
-                Total Bloques:{" "}
-                {kpisVivo.integridad_blockchain.total_bloques_auditados} (Minuta:{" "}
-                {kpisVivo.integridad_blockchain.bloques_minuta} • Relevos:{" "}
-                {kpisVivo.integridad_blockchain.bloques_actas_relevo} • Kardex:{" "}
-                {kpisVivo.integridad_blockchain.bloques_kardex_balistico})
+              <span className="text-zinc-500 text-[11px]">
+                {kpisVivo.integridad_blockchain.total_bloques_auditados} bloques (
+                {kpisVivo.integridad_blockchain.bloques_minuta} minuta •{" "}
+                {kpisVivo.integridad_blockchain.bloques_actas_relevo} relevos •{" "}
+                {kpisVivo.integridad_blockchain.bloques_kardex_balistico} kardex)
               </span>
             </div>
-            <div className="flex items-center gap-3 text-[11px]">
-              <span className="text-amber-300">
-                Credenciales SV en Alerta:{" "}
-                <strong>{kpisVivo.credenciales_sv_alerta_conteo}</strong>
+            <div className="flex items-center gap-4 text-[11px]">
+              <span className="text-[#F59E0B]">
+                SV Alerta: <strong>{kpisVivo.credenciales_sv_alerta_conteo}</strong>
               </span>
-              <span className="text-rose-300">
-                Salvoconductos {"<60d"}:{" "}
-                <strong>{kpisVivo.salvoconductos_indumil_alerta_conteo}</strong>
+              <span className="text-zinc-400">
+                Indumil &lt;60d: <strong>{kpisVivo.salvoconductos_indumil_alerta_conteo}</strong>
               </span>
             </div>
           </div>
@@ -1224,51 +1256,51 @@ export function CentroDeMandoDashboard(): ReactElement {
               return (
                 <div
                   key={puesto.puesto_id}
-                  className="flex flex-col justify-between rounded-2xl border border-white/10 bg-slate-900/60 p-5 shadow-lg backdrop-blur-xl transition hover:border-cyan-500/30"
+                  className="flex flex-col justify-between rounded-xl border border-white/[0.07] bg-[#111113] p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] transition hover:border-white/20"
                 >
                   <div>
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <span className="rounded bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 font-mono text-xs font-bold text-cyan-300">
+                        <span className="rounded border border-white/[0.08] bg-[#18181B] px-2 py-0.5 font-mono text-xs font-medium text-zinc-200 tabular-nums">
                           {puesto.codigo_puesto}
                         </span>
-                        <h3 className="mt-2 text-base font-bold text-white leading-tight">
+                        <h3 className="mt-2 text-base font-semibold tracking-tight text-[#FAFAFA] leading-tight">
                           {puesto.nombre_puesto}
                         </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-zinc-400 mt-0.5">
                           Cliente:{" "}
-                          <strong className="text-slate-200">
+                          <strong className="text-zinc-200 font-medium">
                             {puesto.empresa_cliente}
                           </strong>
                         </p>
                       </div>
 
-                      <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-slate-300 shrink-0">
-                        <Shield className="h-3.5 w-3.5 text-emerald-400" />
-                        {puesto.requiere_armamento ? "Indumil Armado" : "No Letal"}
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/[0.07] bg-[#18181B] px-2.5 py-1 text-[11px] font-mono text-zinc-300 shrink-0">
+                        <Shield className="h-3 w-3 text-[#10B981]" />
+                        {puesto.requiere_armamento ? "Indumil" : "K9/Tech"}
                       </span>
                     </div>
 
-                    <div className="mt-3 flex items-center gap-1 text-xs text-slate-400 border-b border-white/5 pb-3">
-                      <MapPin className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                    <div className="mt-3 flex items-center gap-1 text-xs text-zinc-500 border-b border-white/[0.07] pb-3">
+                      <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
                       <span>
                         {puesto.direccion_ubicacion} • {puesto.ciudad}
                       </span>
                     </div>
 
                     <div className="mt-4 space-y-2">
-                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                        Guardas en Turno Hoy (12 Horas):
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+                        Guardas en Turno Hoy (12h):
                       </span>
 
-                      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 flex items-center justify-between">
+                      <div className="rounded-lg border border-white/[0.07] bg-[#09090B] p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Sun className="h-4 w-4 text-amber-400" />
+                          <Sun className="h-3.5 w-3.5 text-[#F59E0B]" />
                           <div>
-                            <span className="text-[10px] font-bold uppercase text-amber-400 block">
-                              Turno Día (06:00 - 18:00)
+                            <span className="text-[10px] font-mono uppercase text-zinc-400 block">
+                              Día (06:00 - 18:00)
                             </span>
-                            <span className="text-xs font-semibold text-white">
+                            <span className="text-xs font-medium text-[#FAFAFA]">
                               {guardiaDia
                                 ? guardiaDia.nombre_operador
                                 : "Sin asignar"}
@@ -1276,20 +1308,20 @@ export function CentroDeMandoDashboard(): ReactElement {
                           </div>
                         </div>
                         {guardiaDia && (
-                          <span className="font-mono text-xs text-amber-300">
+                          <span className="font-mono text-xs text-zinc-300 tabular-nums">
                             {guardiaDia.codigo_placa_operador}
                           </span>
                         )}
                       </div>
 
-                      <div className="rounded-xl border border-indigo-500/30 bg-indigo-500/10 p-2.5 flex items-center justify-between">
+                      <div className="rounded-lg border border-white/[0.07] bg-[#09090B] p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Moon className="h-4 w-4 text-indigo-400" />
+                          <Moon className="h-3.5 w-3.5 text-zinc-400" />
                           <div>
-                            <span className="text-[10px] font-bold uppercase text-indigo-400 block">
-                              Turno Noche (18:00 - 06:00)
+                            <span className="text-[10px] font-mono uppercase text-zinc-400 block">
+                              Noche (18:00 - 06:00)
                             </span>
-                            <span className="text-xs font-semibold text-white">
+                            <span className="text-xs font-medium text-[#FAFAFA]">
                               {guardiaNoche
                                 ? guardiaNoche.nombre_operador
                                 : "Sin asignar"}
@@ -1297,20 +1329,20 @@ export function CentroDeMandoDashboard(): ReactElement {
                           </div>
                         </div>
                         {guardiaNoche && (
-                          <span className="font-mono text-xs text-indigo-300">
+                          <span className="font-mono text-xs text-zinc-300 tabular-nums">
                             {guardiaNoche.codigo_placa_operador}
                           </span>
                         )}
                       </div>
 
-                      <div className="rounded-xl border border-slate-700 bg-slate-950/40 p-2.5 flex items-center justify-between">
+                      <div className="rounded-lg border border-white/[0.07] bg-[#09090B] p-2.5 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Coffee className="h-4 w-4 text-slate-400" />
+                          <Coffee className="h-3.5 w-3.5 text-zinc-500" />
                           <div>
-                            <span className="text-[10px] font-bold uppercase text-slate-400 block">
-                              Franco Compensatorio (24h)
+                            <span className="text-[10px] font-mono uppercase text-zinc-500 block">
+                              Franco (24h)
                             </span>
-                            <span className="text-xs font-medium text-slate-300">
+                            <span className="text-xs font-medium text-zinc-300">
                               {guardiaDescanso
                                 ? guardiaDescanso.nombre_operador
                                 : "Sin asignar"}
@@ -1318,7 +1350,7 @@ export function CentroDeMandoDashboard(): ReactElement {
                           </div>
                         </div>
                         {guardiaDescanso && (
-                          <span className="font-mono text-xs text-slate-400">
+                          <span className="font-mono text-xs text-zinc-400 tabular-nums">
                             {guardiaDescanso.codigo_placa_operador}
                           </span>
                         )}
@@ -1326,10 +1358,9 @@ export function CentroDeMandoDashboard(): ReactElement {
                     </div>
 
                     {/* Escuadra con Semáforo SuperVigilancia */}
-                    <div className="mt-4 pt-3 border-t border-white/5">
-                      <span className="text-[11px] font-semibold text-slate-400">
-                        Acreditación SuperVigilancia de la Escuadra (
-                        {guardiasDelPuesto.length}):
+                    <div className="mt-4 pt-3 border-t border-white/[0.07]">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400">
+                        Escuadra SuperVigilancia ({guardiasDelPuesto.length}):
                       </span>
                       <div className="mt-2 space-y-1.5">
                         {guardiasDelPuesto.map((g) => {
@@ -1340,16 +1371,16 @@ export function CentroDeMandoDashboard(): ReactElement {
                           return (
                             <div
                               key={g.usuario_id}
-                              className="flex items-center justify-between rounded-lg bg-slate-950/70 border border-white/5 px-2.5 py-1.5 text-[11px]"
+                              className="flex items-center justify-between rounded-md bg-[#09090B] border border-white/[0.06] px-2.5 py-1.5 text-[11px]"
                             >
-                              <span className="text-slate-200 font-medium truncate">
-                                <strong className="font-mono text-emerald-400">
+                              <span className="text-zinc-200 font-medium truncate">
+                                <strong className="font-mono text-zinc-400 tabular-nums">
                                   {g.codigo_placa}
                                 </strong>{" "}
                                 • {g.nombre_completo}
                               </span>
                               <span
-                                className={`rounded border px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${sem.claseColor}`}
+                                className={`rounded border px-1.5 py-0.5 font-mono text-[9px] font-medium shrink-0 ${sem.claseColor}`}
                               >
                                 {sem.etiqueta}
                               </span>
@@ -1360,18 +1391,18 @@ export function CentroDeMandoDashboard(): ReactElement {
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-2 gap-2 pt-3 border-t border-white/10">
+                  <div className="mt-5 grid grid-cols-2 gap-2 pt-3 border-t border-white/[0.07]">
                     {!esCliente ? (
                       <Link
                         to="/turnos-2x2"
-                        className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-center text-xs font-semibold text-slate-200 transition hover:bg-emerald-500 hover:text-slate-950"
+                        className="rounded-lg bg-[#18181B] border border-white/[0.08] px-3 py-2 text-center text-xs font-medium text-zinc-200 transition hover:bg-[#FAFAFA] hover:text-[#09090B]"
                       >
                         Turnos & Relevos
                       </Link>
                     ) : (
                       <Link
                         to="/rondas-y-reportes"
-                        className="rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-center text-xs font-semibold text-slate-200 transition hover:bg-emerald-500 hover:text-slate-950"
+                        className="rounded-lg bg-[#18181B] border border-white/[0.08] px-3 py-2 text-center text-xs font-medium text-zinc-200 transition hover:bg-[#FAFAFA] hover:text-[#09090B]"
                       >
                         SLA Rondas QR
                       </Link>

@@ -152,46 +152,46 @@ export const InteligenciaForenseIA: React.FC = () => {
     : false;
 
   return (
-    <div className="space-y-6 text-slate-100">
-      {/* Encabezado */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-slate-900/90 border border-emerald-500/30 rounded-xl p-5 shadow-lg">
+    <div className="space-y-6 text-[#FAFAFA]">
+      {/* Encabezado Carbon & Monochrome */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-[#111113] border border-white/[0.07] rounded-xl p-5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
         <div>
-          <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase tracking-widest">
-            <BrainCircuit className="w-4 h-4" />
-            <span>SENTINEL // OPS V5.1 — COPILOTO IA ZERO-TRUST &amp; AUDITORÍA FORENSE</span>
+          <div className="flex items-center gap-2 text-zinc-400 text-[11px] font-mono uppercase tracking-widest">
+            <BrainCircuit className="w-4 h-4 text-zinc-300" />
+            <span>SENTINEL // OPS V5.1 — ZERO-TRUST AI &amp; FORENSICS</span>
           </div>
-          <h1 className="text-2xl font-bold text-white mt-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#FAFAFA] mt-1">
             Copiloto Táctico IA, Boletín de Relevo &amp; Laboratorio SHA-256
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Tool calling vinculado al token JWT (aislamiento estricto por tenant y puesto), detección de velocidad imposible en rondas QR y simulador de ataque criptográfico.
+          <p className="text-zinc-400 text-sm mt-1">
+            Tool calling vinculado al token JWT (aislamiento estricto por tenant y puesto), auditoría geofence y verificación criptográfica en caliente.
           </p>
         </div>
         <button
           onClick={() => void cargarTodo(puestoSeleccionado)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-mono text-emerald-300 transition self-start md:self-auto"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-lg bg-[#18181B] hover:bg-zinc-800 border border-white/[0.08] text-xs font-mono text-zinc-200 transition self-start md:self-auto"
         >
-          <RefreshCw className={`w-4 h-4 ${cargando ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${cargando ? "animate-spin" : ""}`} />
           Recalcular Inteligencia
         </button>
       </div>
 
-      {/* SECCIÓN 0 (V5.1): CONSOLA DEL COPILOTO TÁCTICO IA CON TOOL CALLING ZERO-TRUST */}
-      <div className="rounded-xl border border-cyan-500/40 bg-gradient-to-br from-slate-900/95 via-slate-950/90 to-emerald-950/20 p-6 shadow-2xl space-y-4">
+      {/* SECCIÓN 0 (V5.1): CONSOLA DEL COPILOTO TÁCTICO IA CARBON & MONOCHROME */}
+      <div className="rounded-xl border border-white/[0.07] bg-[#111113] p-6 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono text-cyan-400 uppercase tracking-wider">
-              <Sparkles className="w-4 h-4" />
-              <span>ASISTENTE TÁCTICO DE MANDO — ZERO-TRUST TOOL CALLING</span>
+            <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-zinc-300" />
+              <span>ZERO-TRUST TOOL CALLING</span>
             </div>
-            <h2 className="text-lg font-bold text-white mt-1">
+            <h2 className="text-lg font-semibold tracking-tight text-[#FAFAFA] mt-0.5">
               Consola del Copiloto Táctico IA
             </h2>
           </div>
-          <span className="px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-[11px] font-mono text-cyan-300 self-start sm:self-auto">
+          <span className="px-3 py-1 rounded-md bg-[#18181B] border border-white/[0.07] text-[11px] font-mono text-zinc-300 self-start sm:self-auto">
             {respuestaCopiloto?.modo_motor === "LLM_TOOL_CALLING"
-              ? "Motor: LLM + Tools Activo"
-              : "Motor: Fallback Determinístico SQL"}
+              ? "Engine: LLM + Tools"
+              : "Engine: Deterministic SQL"}
           </span>
         </div>
 
@@ -203,9 +203,9 @@ export const InteligenciaForenseIA: React.FC = () => {
               type="button"
               disabled={consultandoCopiloto}
               onClick={() => void ejecutarConsultaCopiloto(chip)}
-              className="px-3 py-1.5 rounded-full border border-emerald-500/35 bg-emerald-950/40 hover:bg-emerald-500/20 hover:border-emerald-400 text-xs font-mono text-emerald-200 transition disabled:opacity-50"
+              className="px-3 py-1.5 rounded-full border border-white/[0.08] bg-[#18181B] hover:border-white/25 hover:text-[#FAFAFA] text-xs font-mono text-zinc-300 transition disabled:opacity-50"
             >
-              ⚡ {chip}
+              {chip}
             </button>
           ))}
         </div>
@@ -223,60 +223,60 @@ export const InteligenciaForenseIA: React.FC = () => {
             value={consultaCopiloto}
             onChange={(e) => setConsultaCopiloto(e.target.value)}
             placeholder="Ej: Analiza riesgos de credenciales SuperVigilancia, anomalías Haversine y estado SHA-256..."
-            className="flex-1 rounded-xl border border-slate-700 bg-slate-950/90 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-400 focus:outline-none"
+            className="flex-1 rounded-lg border border-white/[0.08] bg-[#09090B] px-4 py-2.5 text-sm text-[#FAFAFA] placeholder-zinc-500 focus:border-white/30 focus:outline-none"
           />
           <button
             type="submit"
             disabled={consultandoCopiloto}
-            className="flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 px-5 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-slate-950 transition disabled:opacity-50"
+            className="flex items-center justify-center gap-2 rounded-lg bg-[#FAFAFA] hover:bg-zinc-200 px-5 py-2.5 text-xs font-semibold text-[#09090B] transition disabled:opacity-50"
           >
-            <Send className="w-4 h-4" />
+            <Send className="w-3.5 h-3.5" />
             <span>{consultandoCopiloto ? "Analizando..." : "Consultar Copiloto"}</span>
           </button>
         </form>
 
         {/* Estado de carga tipo esqueleto / pulso táctico */}
         {consultandoCopiloto && (
-          <div className="rounded-xl border border-cyan-500/30 bg-slate-950/80 p-4 space-y-2.5 animate-pulse">
-            <div className="flex items-center gap-2 text-xs font-mono text-cyan-300">
+          <div className="rounded-xl border border-white/[0.07] bg-[#09090B] p-4 space-y-2.5 animate-pulse">
+            <div className="flex items-center gap-2 text-xs font-mono text-zinc-400">
               <Cpu className="w-4 h-4 animate-spin" />
               <span>Invocando herramientas de solo lectura vinculadas al token JWT...</span>
             </div>
-            <div className="h-3 w-3/4 rounded bg-slate-800" />
-            <div className="h-3 w-1/2 rounded bg-slate-800" />
+            <div className="h-3 w-3/4 rounded bg-[#18181B]" />
+            <div className="h-3 w-1/2 rounded bg-[#18181B]" />
           </div>
         )}
 
         {errorCopiloto && (
-          <div className="rounded-xl border border-rose-500/50 bg-rose-950/50 p-3.5 text-xs font-mono text-rose-200 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          <div className="rounded-lg border border-[#EF4444]/40 bg-[#EF4444]/10 p-3.5 text-xs font-mono text-red-200 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-[#EF4444] shrink-0" />
             <span>{errorCopiloto}</span>
           </div>
         )}
 
         {!consultandoCopiloto && respuestaCopiloto && (
-          <div className="rounded-xl border border-slate-800 bg-slate-950/85 p-4 space-y-3">
+          <div className="rounded-xl border border-white/[0.07] bg-[#09090B] p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span
-                  className={`px-2.5 py-0.5 rounded text-xs font-mono font-bold ${
+                  className={`px-2.5 py-0.5 rounded text-xs font-mono font-semibold ${
                     respuestaCopiloto.nivel_riesgo === "CRITICO"
-                      ? "bg-red-600 text-white"
+                      ? "bg-[#EF4444] text-white"
                       : respuestaCopiloto.nivel_riesgo === "ALTO"
-                      ? "bg-amber-500 text-slate-950"
+                      ? "bg-[#F59E0B] text-[#09090B]"
                       : respuestaCopiloto.nivel_riesgo === "MODERADO"
-                      ? "bg-yellow-500/90 text-slate-950"
-                      : "bg-emerald-600 text-white"
+                      ? "bg-[#F59E0B]/80 text-[#09090B]"
+                      : "bg-[#10B981]/20 border border-[#10B981]/40 text-[#10B981]"
                   }`}
                 >
-                  RIESGO: {respuestaCopiloto.nivel_riesgo}
+                  RISK: {respuestaCopiloto.nivel_riesgo}
                 </span>
-                <span className="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 text-[11px] font-mono">
+                <span className="px-2 py-0.5 rounded bg-[#18181B] border border-white/[0.07] text-zinc-300 text-[11px] font-mono">
                   Tenant: {respuestaCopiloto.tenant_id_aislado}
                 </span>
                 {respuestaCopiloto.intento_inyeccion_detectado && (
-                  <span className="px-2 py-0.5 rounded bg-rose-600 text-white text-[11px] font-mono font-bold">
-                    PROMPT INJECTION BLOQUEADO
+                  <span className="px-2 py-0.5 rounded bg-[#EF4444] text-white text-[11px] font-mono font-semibold">
+                    PROMPT INJECTION BLOCKED
                   </span>
                 )}
               </div>
@@ -284,7 +284,7 @@ export const InteligenciaForenseIA: React.FC = () => {
                 {respuestaCopiloto.herramientas_ejecutadas.map((tool) => (
                   <span
                     key={tool}
-                    className="px-2 py-0.5 rounded border border-emerald-500/30 bg-emerald-950/40 text-[10px] font-mono text-emerald-300"
+                    className="px-2 py-0.5 rounded border border-white/[0.07] bg-[#18181B] text-[10px] font-mono text-zinc-400"
                   >
                     tool:{tool}
                   </span>
@@ -292,20 +292,20 @@ export const InteligenciaForenseIA: React.FC = () => {
               </div>
             </div>
 
-            <p className="text-sm text-slate-100 leading-relaxed">
+            <p className="text-sm text-[#FAFAFA] leading-relaxed">
               {respuestaCopiloto.respuesta_ejecutiva}
             </p>
 
             {respuestaCopiloto.hashes_sha256_citados.length > 0 && (
-              <div className="pt-2 border-t border-slate-800/80 space-y-1">
-                <span className="text-[11px] font-mono text-slate-400 uppercase block">
-                  Evidencia Criptográfica SHA-256 Citada:
+              <div className="pt-2 border-t border-white/[0.07] space-y-1">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase block">
+                  SHA-256 Verified Evidence:
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {respuestaCopiloto.hashes_sha256_citados.map((hash) => (
                     <span
                       key={hash}
-                      className="inline-flex items-center gap-1 rounded bg-slate-900 border border-slate-700 px-2 py-0.5 text-[11px] font-mono text-emerald-400"
+                      className="inline-flex items-center gap-1 rounded bg-[#18181B] border border-white/[0.07] px-2 py-0.5 text-[11px] font-mono text-[#10B981]"
                     >
                       <Lock className="w-3 h-3 shrink-0" />
                       {hash.slice(0, 22)}...
@@ -316,14 +316,14 @@ export const InteligenciaForenseIA: React.FC = () => {
             )}
 
             {respuestaCopiloto.recomendaciones_tacticas.length > 0 && (
-              <div className="pt-2 border-t border-slate-800/80">
-                <span className="text-[11px] font-mono text-cyan-400 uppercase block mb-1">
-                  Acciones Tácticas Sugeridas:
+              <div className="pt-2 border-t border-white/[0.07]">
+                <span className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">
+                  Recommended Actions:
                 </span>
-                <ul className="space-y-1 text-xs text-slate-300">
+                <ul className="space-y-1 text-xs text-zinc-300">
                   {respuestaCopiloto.recomendaciones_tacticas.map((rec, idx) => (
                     <li key={idx} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#10B981] shrink-0 mt-0.5" />
                       <span>{rec}</span>
                     </li>
                   ))}

@@ -12,17 +12,13 @@ import {
   ShieldCheck,
   Lock,
   Mail,
-  Activity,
-  Database,
   AlertCircle,
   KeyRound,
   UserPlus,
   Phone,
   BadgeAlert,
-  Building2,
-  ChevronDown,
-  ChevronUp,
   Award,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   extraerMensajeError,
@@ -56,19 +52,19 @@ interface CredencialDemostracion {
 const CUENTAS_DEMOSTRACION: CredencialDemostracion[] = [
   {
     etiquetaRol: "Administrador",
-    subtituloPrioridad: "Nivel 1 • Dirección",
+    subtituloPrioridad: "Nivel 1 • Global",
     nombre: "Comandante Alejandro Vargas",
     correo: "admin@sentinelops.co",
     contrasena: "Sentinel2026*",
-    colorDistintivo: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
+    colorDistintivo: "border-white/[0.08] bg-[#18181B] text-[#FAFAFA]",
   },
   {
     etiquetaRol: "Supervisor CAD",
-    subtituloPrioridad: "Nivel 2 • Operaciones",
+    subtituloPrioridad: "Nivel 2 • Dispatch",
     nombre: "Capitán Valeria Mendoza",
     correo: "supervisor@sentinelops.co",
     contrasena: "Sentinel2026*",
-    colorDistintivo: "border-cyan-500/40 bg-cyan-500/15 text-cyan-300",
+    colorDistintivo: "border-white/[0.08] bg-[#18181B] text-zinc-200",
   },
   {
     etiquetaRol: "RRHH",
@@ -76,7 +72,7 @@ const CUENTAS_DEMOSTRACION: CredencialDemostracion[] = [
     nombre: "Dra. Natalia Gómez (RRH-201)",
     correo: "rrhh@sentinelops.co",
     contrasena: "Sentinel2026*",
-    colorDistintivo: "border-purple-500/40 bg-purple-500/15 text-purple-300",
+    colorDistintivo: "border-white/[0.08] bg-[#18181B] text-zinc-200",
   },
   {
     etiquetaRol: "Operador Garita",
@@ -84,7 +80,7 @@ const CUENTAS_DEMOSTRACION: CredencialDemostracion[] = [
     nombre: "Guarda Carlos Ramírez (OPR-401)",
     correo: "operador1@sentinelops.co",
     contrasena: "Sentinel2026*",
-    colorDistintivo: "border-amber-500/40 bg-amber-500/15 text-amber-300",
+    colorDistintivo: "border-white/[0.08] bg-[#18181B] text-zinc-200",
   },
   {
     etiquetaRol: "Cliente B2B",
@@ -92,7 +88,7 @@ const CUENTAS_DEMOSTRACION: CredencialDemostracion[] = [
     nombre: "Ing. Roberto Salazar (CLI-901)",
     correo: "cliente@sentinelops.co",
     contrasena: "Sentinel2026*",
-    colorDistintivo: "border-sky-500/40 bg-sky-500/15 text-sky-300",
+    colorDistintivo: "border-white/[0.08] bg-[#18181B] text-zinc-200",
   },
 ];
 
@@ -115,7 +111,6 @@ export function VistaAccesoTactico({
   const [puestosDisponibles, setPuestosDisponibles] = useState<
     PuestoVigilancia[]
   >([]);
-  const [mostrarDemoCuentas, setMostrarDemoCuentas] = useState<boolean>(true);
 
   const formularioIngreso = useForm<SolicitudInicioSesion>({
     defaultValues: {
@@ -200,154 +195,131 @@ export function VistaAccesoTactico({
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-emerald-500/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-cyan-500/15 blur-3xl" />
-
-      <div className="relative z-10 grid w-full max-w-6xl grid-cols-1 gap-8 lg:grid-cols-12 items-center">
-        {/* Panel Izquierdo: Telemetría del Núcleo y Normativa Colombiana */}
-        <section className="lg:col-span-5 flex flex-col justify-between rounded-2xl border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl">
-          <div>
-            <div className="flex items-center justify-between border-b border-white/10 pb-5">
+    <div className="min-h-screen w-full bg-[#09090B] text-[#FAFAFA] flex items-center justify-center p-6 sm:p-10">
+      <div className="grid w-full max-w-5xl grid-cols-1 gap-10 lg:grid-cols-12 items-start">
+        {/* Columna Izquierda: Identidad Minimalista, Telemetría Viva & Command-Menu Demo */}
+        <section className="lg:col-span-5 flex flex-col justify-between space-y-8 pt-2">
+          <div className="space-y-5">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400">
-                  <ShieldCheck className="h-7 w-7" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/[0.08] bg-[#111113] text-[#FAFAFA] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+                  <ShieldCheck className="h-5 w-5" />
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-400">
-                    Enterprise V5.1 • Zero-Trust &amp; AI
-                  </span>
-                  <h1 className="text-xl font-bold tracking-tight text-white">
-                    SENTINEL <span className="text-emerald-400">//</span> OPS
+                  <h1 className="text-lg font-semibold tracking-tight text-[#FAFAFA]">
+                    SENTINEL <span className="text-zinc-600">//</span> OPS
                   </h1>
+                  <span className="text-[10px] font-mono uppercase tracking-[0.18em] text-zinc-500 block">
+                    Command Infrastructure V5.1
+                  </span>
                 </div>
               </div>
 
               <button
                 type="button"
                 onClick={alReintentarConexion}
-                className="flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-950/80 px-3 py-1 text-xs hover:border-emerald-500/40"
+                className="flex items-center gap-2 rounded-full border border-white/[0.07] bg-[#111113] px-2.5 py-1 text-[11px] font-mono text-zinc-300 hover:border-white/20 transition duration-150"
               >
-                <span
-                  className={`h-2 w-2 rounded-full ${
-                    estadoConexion === "conectado"
-                      ? "bg-emerald-400"
-                      : estadoConexion === "cargando"
-                        ? "bg-amber-400 animate-ping"
-                        : "bg-rose-500"
-                  }`}
-                />
-                <span className="text-[11px]">
-                  {estadoConexion === "conectado" ? "En Línea" : "Reconectar"}
+                <span className="relative flex h-2 w-2">
+                  {estadoConexion === "conectado" && (
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
+                  )}
+                  <span
+                    className={`relative inline-flex rounded-full h-2 w-2 ${
+                      estadoConexion === "conectado"
+                        ? "bg-[#10B981]"
+                        : estadoConexion === "cargando"
+                          ? "bg-[#F59E0B]"
+                          : "bg-[#EF4444]"
+                    }`}
+                  />
+                </span>
+                <span>
+                  {estadoConexion === "conectado"
+                    ? "API Live"
+                    : estadoConexion === "cargando"
+                      ? "Syncing"
+                      : "Offline"}
                 </span>
               </button>
             </div>
 
-            <div className="mt-5 space-y-3">
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-950/20 p-3.5">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-emerald-300">
-                  <Activity className="h-3.5 w-3.5" />
-                  <span>Estado del Servidor & Ley 2101</span>
-                </div>
-                <p className="mt-1 text-sm font-semibold text-white">
-                  {datosEstado?.estado ?? "Verificando enlace con FastAPI..."} •{" "}
-                  Tope {datosEstado?.tope_horas_semanales_ley_2101 ?? 42}h/sem
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-slate-950/50 p-3.5">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-cyan-300">
-                  <Database className="h-3.5 w-3.5" />
-                  <span>Motor de Persistencia</span>
-                </div>
-                <p className="mt-1 text-xs font-medium text-slate-200">
-                  {datosEstado?.motor_base_datos ??
-                    "PostgreSQL 15 / SQLite Asíncrono"}
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-white/10 bg-slate-950/50 p-3.5">
-                <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-amber-300">
-                  <Building2 className="h-3.5 w-3.5" />
-                  <span>Puestos con Armamento Indumil</span>
-                </div>
-                <p className="mt-1 text-xs font-medium text-slate-200">
-                  {puestosDisponibles.length > 0
-                    ? `${puestosDisponibles.length} Instalaciones con Cobertura 24/7 y Acta SHA-256`
-                    : "Cargando instalaciones..."}
-                </p>
-              </div>
+            {/* Resumen Compacto de Cumplimiento & Motor */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-mono text-zinc-400 border-y border-white/[0.07] py-3 tabular-nums">
+              <span>Ley 2101 · {datosEstado?.tope_horas_semanales_ley_2101 ?? 42}h/sem</span>
+              <span className="text-zinc-700">·</span>
+              <span>SHA-256 Ledger</span>
+              <span className="text-zinc-700">·</span>
+              <span>
+                {puestosDisponibles.length > 0
+                  ? `${puestosDisponibles.length} Sedes`
+                  : "PostgreSQL/SQLite"}
+              </span>
             </div>
 
-            {/* Cuentas de Demostración Colapsables (5 Roles) */}
-            <div className="mt-6 border-t border-white/10 pt-4">
-              <button
-                type="button"
-                onClick={(): void => setMostrarDemoCuentas((prev) => !prev)}
-                className="flex w-full items-center justify-between text-xs font-semibold text-slate-400 hover:text-slate-200"
-              >
-                <span>Jerarquía RBAC de 5 Niveles (1-Click Demo)</span>
-                {mostrarDemoCuentas ? (
-                  <ChevronUp className="h-4 w-4" />
-                ) : (
-                  <ChevronDown className="h-4 w-4" />
-                )}
-              </button>
+            {/* Selector de 5 Roles Demo tipo Command-Menu de Linear */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-zinc-500 px-1">
+                <span>Acceso Demo Rápido (5 Roles RBAC)</span>
+                <span>1-Click</span>
+              </div>
 
-              {mostrarDemoCuentas && (
-                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {CUENTAS_DEMOSTRACION.map((cuenta) => (
-                    <button
-                      key={cuenta.correo}
-                      type="button"
-                      disabled={procesando}
-                      onClick={(): void => {
-                        void ingresarConCuentaDemo(cuenta);
-                      }}
-                      className="flex flex-col items-start rounded-lg border border-white/10 bg-slate-950/70 p-2.5 text-left hover:border-emerald-500/40 transition"
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <span
-                          className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${cuenta.colorDistintivo}`}
-                        >
+              <div className="rounded-xl border border-white/[0.07] bg-[#111113] divide-y divide-white/[0.07] overflow-hidden shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+                {CUENTAS_DEMOSTRACION.map((cuenta, indice) => (
+                  <button
+                    key={cuenta.correo}
+                    type="button"
+                    disabled={procesando}
+                    onClick={(): void => {
+                      void ingresarConCuentaDemo(cuenta);
+                    }}
+                    className="group w-full flex items-center justify-between gap-3 px-3.5 py-2.5 text-left transition duration-150 hover:bg-[#18181B] disabled:opacity-50"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-[#FAFAFA] group-hover:text-white">
                           {cuenta.etiquetaRol}
                         </span>
-                        <span className="text-[9px] text-slate-400 font-mono">
-                          {cuenta.subtituloPrioridad}
+                        <span className="text-[11px] text-zinc-500 truncate hidden sm:inline">
+                          {cuenta.nombre}
                         </span>
                       </div>
-                      <span className="mt-1 text-xs font-semibold text-white truncate w-full">
-                        {cuenta.nombre}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <kbd className="rounded border border-white/[0.08] bg-[#09090B] px-1.5 py-0.5 font-mono text-[10px] text-zinc-400 group-hover:text-zinc-200 tabular-nums">
+                        {cuenta.subtituloPrioridad} · ⌘{indice + 1}
+                      </kbd>
+                      <ArrowUpRight className="h-3.5 w-3.5 text-zinc-600 group-hover:text-[#FAFAFA] transition" />
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <p className="mt-5 border-t border-white/10 pt-3 text-[11px] text-slate-400">
-            SENTINEL // OPS V5.1 • SuperVigilancia • Ley 2101 (42h) • SARLAFT 2.0 •
-            Copiloto Táctico IA &amp; SHA-256.
+          <p className="text-[11px] font-mono text-zinc-600">
+            {datosEstado?.motor_base_datos ?? "PostgreSQL 15 / Async SQLite"} ·
+            Clave semilla: Sentinel2026*
           </p>
         </section>
 
-        {/* Panel Derecho: Selector Dinámico de Inicio de Sesión o Registro Real */}
-        <section className="lg:col-span-7 rounded-2xl border border-white/10 bg-slate-900/60 p-8 shadow-2xl backdrop-blur-xl">
-          <div className="flex border-b border-white/10 mb-6">
+        {/* Columna Derecha: Formulario Limpio de Acceso / Registro */}
+        <section className="lg:col-span-7 rounded-2xl border border-white/[0.07] bg-[#111113] p-8 sm:p-10 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)]">
+          <div className="flex border-b border-white/[0.07] mb-7">
             <button
               type="button"
               onClick={(): void => {
                 setPestanaActiva("ingreso");
                 setErrorAutenticacion(null);
               }}
-              className={`flex items-center gap-2 pb-3 text-sm font-bold transition border-b-2 mr-6 ${
+              className={`flex items-center gap-2 pb-3 text-sm font-medium transition duration-150 border-b-2 mr-6 ${
                 pestanaActiva === "ingreso"
-                  ? "border-emerald-400 text-white"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
+                  ? "border-[#FAFAFA] text-[#FAFAFA]"
+                  : "border-transparent text-zinc-500 hover:text-zinc-200"
               }`}
             >
-              <KeyRound className="h-4 w-4 text-emerald-400" />
+              <KeyRound className="h-4 w-4" />
               <span>Iniciar Sesión</span>
             </button>
 
@@ -357,119 +329,84 @@ export function VistaAccesoTactico({
                 setPestanaActiva("registro");
                 setErrorAutenticacion(null);
               }}
-              className={`flex items-center gap-2 pb-3 text-sm font-bold transition border-b-2 ${
+              className={`flex items-center gap-2 pb-3 text-sm font-medium transition duration-150 border-b-2 ${
                 pestanaActiva === "registro"
-                  ? "border-cyan-400 text-white"
-                  : "border-transparent text-slate-400 hover:text-slate-200"
+                  ? "border-[#FAFAFA] text-[#FAFAFA]"
+                  : "border-transparent text-zinc-500 hover:text-zinc-200"
               }`}
             >
-              <UserPlus className="h-4 w-4 text-cyan-400" />
-              <span>Registrar Guarda / Integrante Real</span>
+              <UserPlus className="h-4 w-4" />
+              <span>Registrar Integrante</span>
             </button>
           </div>
 
           {errorAutenticacion && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-rose-500/30 bg-rose-950/30 p-3.5 text-xs text-rose-200">
-              <AlertCircle className="h-4 w-4 shrink-0 text-rose-400 mt-0.5" />
+            <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-[#EF4444]/40 bg-[#EF4444]/10 p-3.5 text-xs text-red-200">
+              <AlertCircle className="h-4 w-4 shrink-0 text-[#EF4444] mt-0.5" />
               <span>{errorAutenticacion}</span>
             </div>
           )}
 
           {pestanaActiva === "ingreso" && (
-            <div className="space-y-4">
-              {/* Acceso Demo Instantáneo (1 Clic) para Reclutadores y Evaluadores */}
-              <div className="rounded-xl border border-emerald-500/35 bg-gradient-to-br from-emerald-950/40 via-slate-950/80 to-cyan-950/30 p-4 shadow-lg shadow-emerald-950/30">
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                    Acceso Demo Instantáneo (1 Clic)
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Clave auto-inyectada: Sentinel2026*
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
-                  {CUENTAS_DEMOSTRACION.map((cuenta) => (
-                    <button
-                      key={cuenta.correo}
-                      type="button"
-                      disabled={procesando}
-                      onClick={(): void => {
-                        void ingresarConCuentaDemo(cuenta);
-                      }}
-                      className="group rounded-xl border border-white/10 bg-slate-950/90 p-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400/70 hover:bg-emerald-500/10 disabled:opacity-50"
-                    >
-                      <span
-                        className={`block rounded-md px-1.5 py-0.5 text-[10px] font-bold text-center transition ${cuenta.colorDistintivo}`}
-                      >
-                        {cuenta.etiquetaRol}
-                      </span>
-                      <span className="text-[10px] font-medium text-slate-300 group-hover:text-white block mt-1.5 text-center truncate">
-                        {cuenta.subtituloPrioridad}
-                      </span>
-                    </button>
-                  ))}
+            <form
+              onSubmit={(evento): void => {
+                void formularioIngreso.handleSubmit(procesarInicioSesion)(
+                  evento
+                );
+              }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-base font-semibold tracking-tight text-[#FAFAFA]">
+                  Credenciales Corporativas
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Ingresa tu correo institucional o selecciona un rol en el panel lateral para acceso demo instantáneo.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-zinc-300">
+                  Correo Electrónico
+                </label>
+                <div className="relative mt-1.5">
+                  <Mail className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-500" />
+                  <input
+                    type="email"
+                    {...formularioIngreso.register("correo_electronico", {
+                      required: "El correo es obligatorio",
+                    })}
+                    className="w-full rounded-lg border border-white/[0.08] bg-[#09090B] py-2.5 pl-10 pr-4 text-sm text-[#FAFAFA] placeholder-zinc-600 focus:border-white/30 focus:outline-none transition duration-150"
+                    placeholder="operador@sentinelops.co"
+                  />
                 </div>
               </div>
 
-              <div className="relative flex py-1 items-center">
-                <div className="flex-grow border-t border-white/10"></div>
-                <span className="flex-shrink mx-3 text-[11px] uppercase tracking-wider text-slate-500">
-                  O ingrese credenciales corporativas
-                </span>
-                <div className="flex-grow border-t border-white/10"></div>
+              <div>
+                <label className="block text-xs font-medium text-zinc-300">
+                  Contraseña
+                </label>
+                <div className="relative mt-1.5">
+                  <Lock className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-zinc-500" />
+                  <input
+                    type="password"
+                    {...formularioIngreso.register("contrasena", {
+                      required: "La contraseña es obligatoria",
+                    })}
+                    className="w-full rounded-lg border border-white/[0.08] bg-[#09090B] py-2.5 pl-10 pr-4 text-sm text-[#FAFAFA] placeholder-zinc-600 focus:border-white/30 focus:outline-none transition duration-150"
+                    placeholder="••••••••••••"
+                  />
+                </div>
               </div>
 
-              <form
-                onSubmit={(evento): void => {
-                  void formularioIngreso.handleSubmit(procesarInicioSesion)(
-                    evento
-                  );
-                }}
-                className="space-y-4"
+              <button
+                type="submit"
+                disabled={procesando}
+                className="w-full rounded-lg bg-[#FAFAFA] py-2.5 text-sm font-semibold text-[#09090B] transition duration-150 hover:bg-zinc-200 disabled:opacity-50"
               >
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Correo Electrónico
-                  </label>
-                  <div className="relative mt-1.5">
-                    <Mail className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
-                    <input
-                      type="email"
-                      {...formularioIngreso.register("correo_electronico", {
-                        required: "El correo es obligatorio",
-                      })}
-                      className="w-full rounded-xl border border-white/10 bg-slate-950/80 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
-                      placeholder="ejemplo@sentinelops.co"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                    Contraseña
-                  </label>
-                  <div className="relative mt-1.5">
-                    <Lock className="pointer-events-none absolute left-3.5 top-3 h-4 w-4 text-slate-500" />
-                    <input
-                      type="password"
-                      {...formularioIngreso.register("contrasena", {
-                        required: "La contraseña es obligatoria",
-                      })}
-                      className="w-full rounded-xl border border-white/10 bg-slate-950/80 py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
-                      placeholder="••••••••••••"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={procesando}
-                  className="mt-2 w-full rounded-xl bg-emerald-500 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 disabled:opacity-50"
-                >
-                  {procesando ? "Autenticando..." : "Ingresar a la Plataforma"}
-                </button>
-              </form>
-            </div>
+                {procesando ? "Autenticando..." : "Ingresar a la Plataforma"}
+              </button>
+            </form>
           )}
 
           {pestanaActiva === "registro" && (

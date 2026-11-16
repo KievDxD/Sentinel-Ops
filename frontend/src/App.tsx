@@ -405,84 +405,65 @@ export function App(): ReactElement {
         className={`flex min-h-screen w-full font-sans antialiased ${
           modoTacticoAltoContraste
             ? "modo-tactico-campo bg-black text-white"
-            : "bg-slate-950 text-slate-100"
+            : "bg-[#09090B] text-[#FAFAFA]"
         }`}
       >
-        {!modoTacticoAltoContraste && (
-          <>
-            <div className="pointer-events-none fixed -top-40 -left-40 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl z-0" />
-            <div className="pointer-events-none fixed -bottom-40 -right-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl z-0" />
-          </>
-        )}
-
         {/* ================================================================= */}
-        {/* BARRA LATERAL TÁCTICA (SIDEBAR SAAS 5 NIVELES RBAC)               */}
+        {/* BARRA LATERAL CARBON & MONOCHROME (SIDEBAR SAAS 5 NIVELES RBAC)   */}
         {/* ================================================================= */}
-        <aside className="relative z-20 flex w-72 flex-col justify-between border-r border-white/10 bg-slate-950/90 backdrop-blur-2xl shrink-0 min-h-screen">
+        <aside className="relative z-20 flex w-[220px] flex-col justify-between border-r border-white/[0.07] bg-[#0C0C0E] shrink-0 min-h-screen shadow-[inset_-1px_0_0_0_rgba(255,255,255,0.03)]">
           <div>
-            <div className="p-6 border-b border-white/10">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-emerald-500/40 bg-emerald-500/10 text-emerald-400 shadow-lg shadow-emerald-500/10">
-                  <ShieldCheck className="h-6 w-6" />
+            <div className="p-4 border-b border-white/[0.07]">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.09] bg-[#18181B] text-[#FAFAFA] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] shrink-0">
+                  <ShieldCheck className="h-4 w-4" />
                 </div>
-                <div>
-                  <h1 className="text-lg font-black tracking-wider text-white">
-                    SENTINEL <span className="text-emerald-400">//</span> OPS
+                <div className="min-w-0">
+                  <h1 className="text-sm font-semibold tracking-tight text-[#FAFAFA] truncate">
+                    SENTINEL <span className="text-zinc-500">//</span> OPS
                   </h1>
-                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400 block">
-                    Enterprise V5.1 • Colombia
+                  <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-zinc-400 block truncate">
+                    Enterprise V5.1
                   </span>
                 </div>
               </div>
 
               {/* Reloj Táctico en Vivo */}
-              <div className="mt-4 flex items-center justify-between rounded-xl border border-white/5 bg-slate-900/60 px-3 py-2 text-xs">
-                <div className="flex items-center gap-2 text-slate-400">
-                  <Clock className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-[11px] font-mono">COT (Colombia)</span>
+              <div className="mt-3 flex items-center justify-between rounded-md border border-white/[0.07] bg-[#09090B] px-2.5 py-1.5 text-[11px] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                  <Clock className="h-3 w-3 text-zinc-500" />
+                  <span className="font-mono">COT</span>
                 </div>
-                <span className="font-mono font-bold text-white tracking-widest text-sm">
+                <span className="font-mono font-medium text-[#FAFAFA] text-xs tabular-nums">
                   {horaActual}
                 </span>
               </div>
 
               {/* Nivel de Prioridad y Autorización RBAC (5 Niveles) */}
-              <div
-                className={`mt-2.5 rounded-xl border px-3 py-2 text-[10px] font-bold uppercase tracking-wider ${
-                  usuarioActual.rol === "ADMINISTRADOR"
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                    : usuarioActual.rol === "SUPERVISOR"
-                      ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-300"
-                      : usuarioActual.rol === "RRHH"
-                        ? "border-purple-500/40 bg-purple-500/10 text-purple-300"
-                        : usuarioActual.rol === "CLIENTE"
-                          ? "border-sky-500/40 bg-sky-500/10 text-sky-300"
-                          : "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                }`}
-              >
+              <div className="mt-2 rounded-md border border-white/[0.07] bg-[#18181B] px-2.5 py-1.5 text-[9px] font-mono uppercase tracking-wider text-zinc-400 truncate">
                 {usuarioActual.rol === "ADMINISTRADOR" &&
-                  "PRIORIDAD 1 • DIRECCIÓN Y CONTROL TOTAL"}
+                  "LVL 1 • CONTROL TOTAL"}
                 {usuarioActual.rol === "SUPERVISOR" &&
-                  "PRIORIDAD 2 • SUPERVISIÓN DE OPERACIONES"}
+                  "LVL 2 • SUPERVISIÓN"}
                 {usuarioActual.rol === "RRHH" &&
-                  "PRIORIDAD 2.5 • GESTIÓN HUMANA Y NÓMINA"}
+                  "LVL 2.5 • NÓMINA 42H"}
                 {usuarioActual.rol === "OPERADOR" &&
-                  "PRIORIDAD 3 • GUARDA EN PUESTO ASIGNADO"}
+                  "LVL 3 • EN PUESTO"}
                 {usuarioActual.rol === "CLIENTE" &&
-                  "PRIORIDAD 4 • CONSOLA CORPORATIVA CLIENTE"}
+                  "LVL 4 • PORTAL B2B"}
               </div>
             </div>
 
             {/* Menú de Navegación Principal Adaptado a los 5 Roles */}
-            <nav className="p-4 space-y-1.5">
+            <nav className="p-2.5 space-y-0.5">
               <NavLink
                 to="/"
                 end
                 className={({ isActive }): string =>
-                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                  `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                     isActive
-                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                      : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                   }`
                 }
               >
@@ -504,10 +485,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/turnos-2x2"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -525,10 +506,10 @@ export function App(): ReactElement {
               <NavLink
                 to="/minuta-en-vivo"
                 className={({ isActive }): string =>
-                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                  `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                     isActive
-                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                      : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                   }`
                 }
               >
@@ -548,10 +529,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/personal-puestos"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -568,10 +549,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/intercambios"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -587,10 +568,10 @@ export function App(): ReactElement {
               <NavLink
                 to="/rondas-y-reportes"
                 className={({ isActive }): string =>
-                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                  `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                     isActive
-                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                      : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                   }`
                 }
               >
@@ -610,10 +591,10 @@ export function App(): ReactElement {
               <NavLink
                 to="/facturacion-b2b"
                 className={({ isActive }): string =>
-                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                  `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                     isActive
-                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                      : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                   }`
                 }
               >
@@ -628,10 +609,10 @@ export function App(): ReactElement {
               <NavLink
                 to="/acceso-garita"
                 className={({ isActive }): string =>
-                  `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                  `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                     isActive
-                      ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                      : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                   }`
                 }
               >
@@ -647,10 +628,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/libro-balistico"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -668,10 +649,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/despacho-cad"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -680,18 +661,18 @@ export function App(): ReactElement {
                 </NavLink>
               )}
 
-              {/* Nuevos Módulos Enterprise V5.0 */}
-              <div className="pt-2 mt-2 border-t border-white/10 space-y-1.5">
-                <span className="px-3 text-[9px] font-mono uppercase tracking-widest text-emerald-400/80 block">
-                  División Especial V5.0
+              {/* Nuevos Módulos Enterprise V5.1 */}
+              <div className="pt-2.5 mt-2.5 border-t border-white/[0.07] space-y-1">
+                <span className="px-3 text-[10px] font-mono uppercase tracking-widest text-zinc-500 block">
+                  División Especial V5.1
                 </span>
                 <NavLink
                   to="/operaciones-k9"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -702,10 +683,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/cumplimiento-sarlaft"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -716,10 +697,10 @@ export function App(): ReactElement {
                 <NavLink
                   to="/inteligencia-forense"
                   className={({ isActive }): string =>
-                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                    `boton-tactico-campo flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs font-medium transition duration-150 ${
                       isActive
-                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        ? "bg-[#FAFAFA] text-[#09090B] shadow-sm"
+                        : "text-zinc-400 hover:bg-white/[0.04] hover:text-[#FAFAFA]"
                     }`
                   }
                 >
@@ -731,34 +712,34 @@ export function App(): ReactElement {
           </div>
 
           {/* Pie del Sidebar: Selector Rápido de 5 Roles RBAC y Cierre */}
-          <div className="p-4 border-t border-white/10 bg-slate-950/60">
+          <div className="p-4 border-t border-white/[0.07] bg-[#09090B]/80">
             <div className="relative">
               <button
                 type="button"
                 onClick={(): void =>
                   setMostrarSelectorRoles(!mostrarSelectorRoles)
                 }
-                className="w-full flex items-center justify-between rounded-xl border border-white/10 bg-slate-900/80 p-2.5 text-left transition hover:border-emerald-500/40"
+                className="w-full flex items-center justify-between rounded-lg border border-white/[0.07] bg-[#18181B] p-2.5 text-left transition hover:border-white/20 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]"
               >
                 <div className="flex items-center gap-2 truncate">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0 font-bold text-xs">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white/[0.07] text-[#FAFAFA] shrink-0 font-semibold text-xs">
                     {usuarioActual.nombre_completo.charAt(0)}
                   </div>
                   <div className="truncate">
-                    <p className="text-xs font-bold text-white truncate">
+                    <p className="text-xs font-medium text-[#FAFAFA] truncate">
                       {usuarioActual.nombre_completo}
                     </p>
-                    <span className="text-[10px] font-mono text-emerald-400">
+                    <span className="text-[10px] font-mono text-zinc-400">
                       {usuarioActual.rol} • {usuarioActual.codigo_placa}
                     </span>
                   </div>
                 </div>
-                <ChevronDown className="h-4 w-4 text-slate-400 shrink-0" />
+                <ChevronDown className="h-4 w-4 text-zinc-400 shrink-0" />
               </button>
 
               {mostrarSelectorRoles && (
-                <div className="absolute bottom-full left-0 mb-2 w-full rounded-xl border border-white/15 bg-slate-900 p-2 shadow-2xl backdrop-blur-2xl space-y-1 z-50">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 py-1 block">
+                <div className="absolute bottom-full left-0 mb-2 w-full rounded-xl border border-white/[0.09] bg-[#18181B] p-2 shadow-2xl space-y-1 z-50">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 px-2 py-1 block">
                     Alternar Rol (5 Niveles RBAC):
                   </span>
                   {CUENTAS_RAPIDAS.map((c) => (
@@ -769,14 +750,12 @@ export function App(): ReactElement {
                       onClick={(): void => {
                         void cambiarCuentaRapida(c);
                       }}
-                      className="w-full flex items-center justify-between rounded-lg p-2 text-xs transition hover:bg-white/10 text-left"
+                      className="w-full flex items-center justify-between rounded-lg p-2 text-xs transition hover:bg-white/[0.06] text-left"
                     >
-                      <span className="font-semibold text-white truncate mr-2">
+                      <span className="font-medium text-[#FAFAFA] truncate mr-2">
                         {c.nombre}
                       </span>
-                      <span
-                        className={`rounded px-1.5 py-0.5 text-[9px] font-bold shrink-0 ${c.colorBadge}`}
-                      >
+                      <span className="rounded border border-white/[0.08] bg-[#111113] px-1.5 py-0.5 font-mono text-[9px] font-medium text-zinc-300 shrink-0">
                         {c.etiqueta}
                       </span>
                     </button>
@@ -788,7 +767,7 @@ export function App(): ReactElement {
             <button
               type="button"
               onClick={cerrarSesion}
-              className="mt-2.5 w-full flex items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 py-2 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20"
+              className="mt-2.5 w-full flex items-center justify-center gap-2 rounded-lg border border-white/[0.07] bg-[#18181B] py-2 text-xs font-medium text-zinc-300 transition hover:border-[#EF4444]/40 hover:text-[#EF4444]"
             >
               <LogOut className="h-3.5 w-3.5" />
               <span>Cerrar Sesión</span>
@@ -800,42 +779,42 @@ export function App(): ReactElement {
         {/* ÁREA DE CONTENIDO PRINCIPAL, BANNER SOS Y HEADER SUPERIOR          */}
         {/* ================================================================= */}
         <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-          {/* Header Superior con Controles V4.0 de Simulación Viva, Ráfaga Operativa y Auditoría Blockchain */}
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+          {/* Header Superior Carbon & Monochrome (Linear/Vercel Status Bar) */}
+          <header className="sticky top-0 z-30 border-b border-white/[0.07] bg-[#09090B]/95 backdrop-blur-xl px-6 py-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
               <div className="flex items-center gap-2">
-                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-xs font-semibold text-slate-300">
-                  {datosEstado?.estado ?? "Sentinel Core V4.0"}
+                <span className="flex h-2 w-2 rounded-full bg-[#10B981]" />
+                <span className="text-xs font-medium text-zinc-300">
+                  {datosEstado?.estado ?? "Sentinel Core V5.1"}
                 </span>
               </div>
 
-              <span className="text-slate-700">|</span>
+              <span className="text-zinc-700">/</span>
 
-              {/* Indicador en vivo de Integridad Blockchain SHA-256 */}
+              {/* Indicador en vivo de Integridad Blockchain SHA-256 (Semántico Puro) */}
               <div
                 title="Verificación en caliente de bloques encadenados SHA-256 (Minuta, Relevos y Kardex Balístico)"
-                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-mono font-bold transition-all ${
+                className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[11px] font-mono font-medium transition-all ${
                   kpisTiempoReal?.integridad_blockchain
                     ?.INTEGRIDAD_VERIFICADA !== false
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                    : "border-rose-500 bg-rose-600/30 text-rose-200 animate-pulse shadow-lg shadow-rose-900/50"
+                    ? "border-white/[0.07] bg-[#111113] text-zinc-200"
+                    : "border-[#EF4444]/60 bg-[#EF4444]/15 text-[#EF4444]"
                 }`}
               >
                 {kpisTiempoReal?.integridad_blockchain
                   ?.INTEGRIDAD_VERIFICADA !== false ? (
-                  <Lock className="h-3.5 w-3.5 text-emerald-400" />
+                  <Lock className="h-3 w-3 text-[#10B981]" />
                 ) : (
-                  <ShieldAlert className="h-3.5 w-3.5 text-rose-400" />
+                  <ShieldAlert className="h-3 w-3 text-[#EF4444]" />
                 )}
                 <span>
                   {kpisTiempoReal?.integridad_blockchain
                     ?.INTEGRIDAD_VERIFICADA !== false
-                    ? `Integridad Blockchain SHA-256: ${
+                    ? `SHA-256 Verified: ${
                         kpisTiempoReal?.integridad_blockchain
                           ?.total_bloques_auditados ?? 44
-                      } Bloques Verificados`
-                    : `CADENA CORRUPTA DETECTADA EN BLOQUE #${
+                      } blocks`
+                    : `CORRUPT CHAIN DETECTED AT BLOCK #${
                         kpisTiempoReal?.integridad_blockchain
                           ?.bloque_corrupto_id ?? 1
                       }`}
@@ -843,10 +822,10 @@ export function App(): ReactElement {
               </div>
 
               {/* Contador de Conexiones WebSocket Activas */}
-              <div className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-mono text-cyan-300">
-                <Radio className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+              <div className="flex items-center gap-1.5 rounded-md border border-white/[0.07] bg-[#111113] px-2.5 py-1 text-[11px] font-mono text-zinc-300">
+                <Radio className="h-3 w-3 text-[#10B981]" />
                 <span>
-                  WS Activos:{" "}
+                  WS:{" "}
                   {Math.max(
                     1,
                     kpisTiempoReal?.conexiones_websocket_activas ??
@@ -857,62 +836,62 @@ export function App(): ReactElement {
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
               {usuarioActual.rol !== "CLIENTE" && (
                 <>
-                  {/* Interruptor MODO SIMULACIÓN EN VIVO (TELEMETRÍA ACTIVA) */}
+                  {/* Interruptor MODO SIMULACIÓN EN VIVO */}
                   <button
                     type="button"
                     onClick={(): void => {
                       void manejarAlternarSimulacionViva();
                     }}
-                    className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[11px] font-black uppercase tracking-wider transition ${
+                    className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[11px] font-mono font-medium transition ${
                       simulacionVivaActiva
-                        ? "border-cyan-400 bg-cyan-500/20 text-cyan-200 shadow-lg shadow-cyan-500/20"
-                        : "border-white/15 bg-white/5 text-slate-300 hover:border-cyan-400/50 hover:text-cyan-300"
+                        ? "border-[#10B981]/50 bg-[#10B981]/10 text-[#10B981]"
+                        : "border-white/[0.07] bg-[#111113] text-zinc-300 hover:border-white/20 hover:text-[#FAFAFA]"
                     }`}
                   >
                     <Activity
                       className={`h-3.5 w-3.5 ${
                         simulacionVivaActiva
-                          ? "text-cyan-300 animate-spin"
-                          : "text-slate-400"
+                          ? "text-[#10B981] animate-spin"
+                          : "text-zinc-400"
                       }`}
                     />
                     <span>
                       {simulacionVivaActiva
-                        ? "MODO SIMULACIÓN EN VIVO (TELEMETRÍA ACTIVA)"
-                        : "Modo Simulación en Vivo (Inactivo)"}
+                        ? "Live Telemetry: ON"
+                        : "Live Telemetry: OFF"}
                     </span>
                   </button>
 
-                  {/* Botón ⚡ Disparar Ráfaga Operativa */}
+                  {/* Botón Primario Monocromático #FAFAFA / #09090B */}
                   <button
                     type="button"
                     disabled={disparandoRafaga}
                     onClick={(): void => {
                       void manejarDispararRafaga();
                     }}
-                    className="flex items-center gap-1.5 rounded-xl border border-emerald-400/50 bg-emerald-500 px-3 py-1.5 text-xs font-black text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-lg bg-[#FAFAFA] px-3 py-1.5 text-xs font-semibold text-[#09090B] hover:bg-zinc-200 transition disabled:opacity-50"
                   >
                     <Zap className="h-3.5 w-3.5" />
                     <span>
                       {disparandoRafaga
-                        ? "Inyectando Ráfaga..."
-                        : "⚡ Disparar Ráfaga Operativa"}
+                        ? "Inyectando..."
+                        : "Disparar Ráfaga Operativa"}
                     </span>
                   </button>
                 </>
               )}
 
-              {/* Toggle Modo Centro de Mando vs Modo Táctico de Campo (Sunlight Ready) */}
+              {/* Toggle Modo Centro de Mando vs Modo Táctico de Campo */}
               <button
                 type="button"
                 onClick={alternarModoTactico}
-                className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
                   modoTacticoAltoContraste
-                    ? "border-amber-400 bg-amber-400 text-black shadow-lg shadow-amber-500/30"
-                    : "border-white/15 bg-white/5 text-slate-200 hover:border-amber-400/50 hover:text-amber-300"
+                    ? "border-[#F59E0B] bg-[#F59E0B] text-[#09090B]"
+                    : "border-white/[0.07] bg-[#111113] text-zinc-300 hover:border-white/20 hover:text-[#FAFAFA]"
                 }`}
               >
                 <Sun className="h-3.5 w-3.5" />
@@ -929,7 +908,7 @@ export function App(): ReactElement {
                   void cargarKpisHeader();
                 }}
                 title="Sincronizar telemetría del servidor"
-                className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 hover:border-emerald-500/40 hover:text-emerald-300 transition"
+                className="rounded-lg border border-white/[0.07] bg-[#111113] p-1.5 text-zinc-400 hover:border-white/20 hover:text-[#FAFAFA] transition"
               >
                 <RefreshCw
                   className={`h-4 w-4 ${
@@ -938,7 +917,7 @@ export function App(): ReactElement {
                 />
               </button>
 
-              <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-300">
+              <span className="rounded-md border border-white/[0.07] bg-[#18181B] px-2.5 py-1 font-mono text-[11px] font-medium text-zinc-300">
                 {usuarioActual.rol}
               </span>
             </div>
