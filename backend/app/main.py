@@ -13,9 +13,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+import app.modelos.modelos_bd  # noqa: F401 - Registra todos los modelos en Base.metadata
 from app.esquemas.esquemas_pydantic import RespuestaEstadoSistema
 from app.nucleo.base_datos import (
+    Base,
     inicializar_motor_base_datos,
+    motor_bd,
     obtener_descripcion_motor,
     restaurar_base_datos_demo_limpia,
 )
@@ -47,6 +50,8 @@ async def _bucle_auto_reset_demo_24h() -> None:
         await asyncio.sleep(segundos_intervalo)
         try:
             await restaurar_base_datos_demo_limpia()
+            async with motor_bd.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
             await inicializar_datos_semilla()
         except asyncio.CancelledError:
             raise
@@ -59,6 +64,8 @@ async def _bucle_auto_reset_demo_24h() -> None:
 async def ciclo_vida_aplicacion(_app: FastAPI) -> AsyncGenerator[None, None]:
     """Inicializa el esquema de BD, semilla y tarea de auto-reset demo (si MODO_DEMO=True)."""
     await inicializar_motor_base_datos()
+    async with motor_bd.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     await inicializar_datos_semilla()
     tarea_reset_demo: asyncio.Task[None] | None = None
     if configuracion.modo_demo:
@@ -191,3 +198,6 @@ async def obtener_estado_sistema() -> RespuestaEstadoSistema:
         conexiones_websocket_activas=gestor_minuta_ws.cantidad_conectados(),
         tope_horas_semanales_ley_2101=configuracion.tope_horas_semanales,
     )
+
+
+app: FastAPI = aplicacion

@@ -60,7 +60,7 @@ from app.modelos.modelos_bd import (
     TipoTurno,
     VisibilidadMinuta,
 )
-from app.nucleo.base_datos import FabricaSesionesAsincronas
+from app.nucleo.base_datos import Base, FabricaSesionesAsincronas, motor_bd
 from app.nucleo.seguridad import (
     HASH_GENESIS_SHA256,
     calcular_hash_encadenado_sha256,
@@ -91,10 +91,16 @@ COORDENADAS_PUESTOS_V4: dict[str, tuple[float, float, float]] = {
 
 
 async def inicializar_datos_semilla(sesion_externa: object | None = None) -> None:
-    """Puebla la base de datos con el ecosistema hiperrealista V4.0 si está vacía."""
+    """Garantiza la creación del esquema SQLAlchemy y puebla la base de datos si está vacía."""
     if sesion_externa is not None:
+        sesion_interna = getattr(sesion_externa, "_sesion", None)
+        bind_sincrono = getattr(sesion_interna, "bind", None) if sesion_interna is not None else None
+        if bind_sincrono is not None:
+            Base.metadata.create_all(bind=bind_sincrono)
         await _ejecutar_semilla_en_sesion(sesion_externa)  # type: ignore[arg-type]
         return
+    async with motor_bd.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
     async with FabricaSesionesAsincronas() as sesion:
         await _ejecutar_semilla_en_sesion(sesion)
 

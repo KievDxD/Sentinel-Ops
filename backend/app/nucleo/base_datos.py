@@ -23,6 +23,9 @@ class BaseModeloDeclarativo(DeclarativeBase):
     """Clase base declarativa de SQLAlchemy 2.0 para todas las tablas del sistema."""
 
 
+Base = BaseModeloDeclarativo
+
+
 def verificar_puerto_postgres() -> bool:
     """Verifica en menos de 0.2 segundos si el puerto 5432 de PostgreSQL está accesible."""
     try:
@@ -55,6 +58,7 @@ FabricaSesionesAsincronas: async_sessionmaker[AsyncSession] = async_sessionmaker
     expire_on_commit=False,
     autoflush=False,
 )
+motor_bd: AsyncEngine = motor_activo
 
 
 def _verificar_y_sincronizar_esquema(conexion_sincrona: object) -> None:
