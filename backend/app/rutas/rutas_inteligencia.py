@@ -34,6 +34,11 @@ from app.nucleo.seguridad import (
     obtener_usuario_actual,
     requerir_roles,
 )
+from app.servicios.copiloto_tactico import (
+    RespuestaCopilotoTactico,
+    SolicitudCopilotoTactico,
+    procesar_consulta_copiloto,
+)
 from app.servicios.simulador_operativo import (
     auditar_integridad_blockchain_sha256,
     reparar_cadena_forense,
@@ -46,6 +51,41 @@ enrutador_inteligencia = APIRouter(
 )
 
 
+class EstadoDotacionBoletin(BaseModel):
+    serial_armamento: str
+    municion_reglamentaria: int
+    municion_verificada_ultimo_relevo: int
+    estado_armamento: str
+    alerta_balistica_activa: bool
+    observacion_relevo: str
+
+
+class RespuestaBoletinRelevoIA(BaseModel):
+    puesto_id: int
+    puesto_codigo: str
+    puesto_nombre: str
+    ciudad: str
+    ventana_analisis_horas: int
+    nivel_amenaza: str
+    total_eventos_analizados: int
+    visitantes_activos_en_recinto: int
+    hallazgos_clave: list[str]
+    placas_recurrentes: list[str]
+    estado_dotacion: EstadoDotacionBoletin
+    recomendaciones_tacticas: list[str]
+    sello_boletin_sha256: str
+    generado_en: str
+
+
+class RespuestaAuditoriaAntifraude(BaseModel):
+    total_marcaciones_auditadas: int
+    marcaciones_conformes_geocerca: int
+    total_anomalias_detectadas: int
+    indice_confiabilidad_rondas_pct: float
+    anomalias: list[dict[str, Any]]
+    fecha_auditoria: str
+
+
 class SolicitudSabotajeForense(BaseModel):
     """Parámetros opcionales para el simulador de ataque / adulteración en base de datos."""
 
@@ -53,8 +93,26 @@ class SolicitudSabotajeForense(BaseModel):
     texto_adulterado: str | None = None
 
 
+@enrutador_inteligencia.post(
+    "/copiloto",
+    response_model=RespuestaCopilotoTactico,
+    summary="Copiloto Táctico IA con Tool Calling y Aislamiento Zero-Trust",
+)
+async def consultar_copiloto_tactico(
+    solicitud: SolicitudCopilotoTactico,
+    sesion: AsyncSession = Depends(obtener_sesion_bd),
+    usuario_actual: ModeloUsuario = Depends(obtener_usuario_actual),
+) -> RespuestaCopilotoTactico:
+    """
+    Ejecuta consultas operativas y auditorías SHA-256 vinculadas estrictamente al
+    tenant_id, rol y puesto_base_id verificados en el token JWT del usuario.
+    """
+    return await procesar_consulta_copiloto(sesion, usuario_actual, solicitud)
+
+
 @enrutador_inteligencia.get(
     "/boletin-relevo/{puesto_id}",
+    response_model=RespuestaBoletinRelevoIA,
     summary="Generar Boletín Táctico de Relevo (Shift Handover Briefing) consolidado para el puesto",
 )
 async def generar_boletin_relevo_ia(
@@ -77,6 +135,11 @@ async def generar_boletin_relevo_ia(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"No se encontró el puesto de vigilancia '{puesto_id}'.",
+        )
+    if _usuario.rol == RolUsuario.CLIENTE and _usuario.puesto_base_id != puesto.puesto_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="ACCESO DENEGADO: El rol CLIENTE solo puede consultar su sede asignada.",
         )
 
     res_minutas = await sesion.execute(
@@ -198,6 +261,7 @@ async def generar_boletin_relevo_ia(
 
 @enrutador_inteligencia.get(
     "/auditoria-antifraude-rondas",
+    response_model=RespuestaAuditoriaAntifraude,
     summary="Auditoría antifraude de rondas GPS/QR (velocidad humana imposible y desvíos de geocerca)",
 )
 async def auditar_antifraude_rondas(

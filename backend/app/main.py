@@ -4,6 +4,7 @@ Integra el ciclo de vida asíncrono (inicialización de base de datos y semilla)
 el middleware CORS, los módulos de negocio y el canal WebSocket en tiempo real.
 """
 
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -16,6 +17,7 @@ from app.esquemas.esquemas_pydantic import RespuestaEstadoSistema
 from app.nucleo.base_datos import (
     inicializar_motor_base_datos,
     obtener_descripcion_motor,
+    restaurar_base_datos_demo_limpia,
 )
 from app.nucleo.configuracion import configuracion
 from app.rutas.rutas_autenticacion import (
@@ -38,12 +40,38 @@ from app.servicios.gestor_websockets import gestor_minuta_ws
 from app.servicios.semilla import inicializar_datos_semilla
 
 
+async def _bucle_auto_reset_demo_24h() -> None:
+    """Tarea ligera en segundo plano que restaura la semilla demo cada 24 horas si MODO_DEMO=True."""
+    segundos_intervalo = max(60, configuracion.intervalo_reset_demo_horas * 3600)
+    while True:
+        await asyncio.sleep(segundos_intervalo)
+        try:
+            await restaurar_base_datos_demo_limpia()
+            await inicializar_datos_semilla()
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            # Evita derribar el Event Loop ante fallos transitorios de conexión durante el reset
+            pass
+
+
 @asynccontextmanager
 async def ciclo_vida_aplicacion(_app: FastAPI) -> AsyncGenerator[None, None]:
-    """Inicializa el esquema de base de datos y los datos semilla al arrancar el servidor."""
+    """Inicializa el esquema de BD, semilla y tarea de auto-reset demo (si MODO_DEMO=True)."""
     await inicializar_motor_base_datos()
     await inicializar_datos_semilla()
-    yield
+    tarea_reset_demo: asyncio.Task[None] | None = None
+    if configuracion.modo_demo:
+        tarea_reset_demo = asyncio.create_task(_bucle_auto_reset_demo_24h())
+    try:
+        yield
+    finally:
+        if tarea_reset_demo is not None:
+            tarea_reset_demo.cancel()
+            try:
+                await tarea_reset_demo
+            except asyncio.CancelledError:
+                pass
 
 
 aplicacion: FastAPI = FastAPI(

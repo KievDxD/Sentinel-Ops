@@ -9,13 +9,20 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class ConfiguracionSistema(BaseSettings):
     """Parámetros de configuración del entorno de ejecución del servidor."""
 
-    nombre_proyecto: str = "SENTINEL // OPS - API Central Enterprise V3.5"
-    version_api: str = "3.5.0"
+    nombre_proyecto: str = "SENTINEL // OPS - API Central Enterprise V5.1"
+    version_api: str = "5.1.0"
 
-    # Soporte Multi-Tenant SaaS (Fase 12)
+    # Soporte Multi-Tenant SaaS (Fase 12) y Auto-Reset Demo (V5.1)
     modo_multi_tenant: bool = True
     tenant_id_predeterminado: str = "EMPRESA-SEGURIDAD-COLOMBIA-01"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    modo_demo: bool = True
+    intervalo_reset_demo_horas: int = 24
+
+    # Motor IA Copiloto Táctico (Zero-Trust Tool Calling + Fallback Determinístico)
+    llm_api_key: str = ""
+    llm_proveedor: str = "google"
+    llm_modelo: str = "gemini-2.5-flash"
 
     # Conexión principal a PostgreSQL 15 definida en docker-compose.yml
     url_base_datos_postgres: str = (

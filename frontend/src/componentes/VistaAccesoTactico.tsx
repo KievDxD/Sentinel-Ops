@@ -55,40 +55,40 @@ interface CredencialDemostracion {
 
 const CUENTAS_DEMOSTRACION: CredencialDemostracion[] = [
   {
-    etiquetaRol: "ADMINISTRADOR",
-    subtituloPrioridad: "Prioridad 1 • Dirección",
+    etiquetaRol: "Administrador",
+    subtituloPrioridad: "Nivel 1 • Dirección",
     nombre: "Comandante Alejandro Vargas",
     correo: "admin@sentinelops.co",
     contrasena: "Sentinel2026*",
     colorDistintivo: "border-emerald-500/40 bg-emerald-500/15 text-emerald-300",
   },
   {
-    etiquetaRol: "SUPERVISOR",
-    subtituloPrioridad: "Prioridad 2 • Operaciones",
+    etiquetaRol: "Supervisor CAD",
+    subtituloPrioridad: "Nivel 2 • Operaciones",
     nombre: "Capitán Valeria Mendoza",
     correo: "supervisor@sentinelops.co",
     contrasena: "Sentinel2026*",
     colorDistintivo: "border-cyan-500/40 bg-cyan-500/15 text-cyan-300",
   },
   {
-    etiquetaRol: "RRHH & NÓMINA",
-    subtituloPrioridad: "Prioridad 2.5 • Ley 2101",
+    etiquetaRol: "RRHH",
+    subtituloPrioridad: "Nivel 2.5 • Ley 2101",
     nombre: "Dra. Natalia Gómez (RRH-201)",
     correo: "rrhh@sentinelops.co",
     contrasena: "Sentinel2026*",
     colorDistintivo: "border-purple-500/40 bg-purple-500/15 text-purple-300",
   },
   {
-    etiquetaRol: "OPERADOR",
-    subtituloPrioridad: "Prioridad 3 • Guarda 2x2",
+    etiquetaRol: "Operador Garita",
+    subtituloPrioridad: "Nivel 3 • Guarda 2x2",
     nombre: "Guarda Carlos Ramírez (OPR-401)",
     correo: "operador1@sentinelops.co",
     contrasena: "Sentinel2026*",
     colorDistintivo: "border-amber-500/40 bg-amber-500/15 text-amber-300",
   },
   {
-    etiquetaRol: "CLIENTE",
-    subtituloPrioridad: "Prioridad 4 • PST-BOG-01",
+    etiquetaRol: "Cliente B2B",
+    subtituloPrioridad: "Nivel 4 • PST-BOG-01",
     nombre: "Ing. Roberto Salazar (CLI-901)",
     correo: "cliente@sentinelops.co",
     contrasena: "Sentinel2026*",
@@ -215,7 +215,7 @@ export function VistaAccesoTactico({
                 </div>
                 <div>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-400">
-                    Enterprise V2.0 • SuperVigilancia
+                    Enterprise V5.1 • Zero-Trust &amp; AI
                   </span>
                   <h1 className="text-xl font-bold tracking-tight text-white">
                     SENTINEL <span className="text-emerald-400">//</span> OPS
@@ -327,8 +327,8 @@ export function VistaAccesoTactico({
           </div>
 
           <p className="mt-5 border-t border-white/10 pt-3 text-[11px] text-slate-400">
-            SENTINEL // OPS V2.0 • SuperVigilancia • Ley 1920 y Ley 2101 (42h) •
-            Indumil • SOS WebSockets.
+            SENTINEL // OPS V5.1 • SuperVigilancia • Ley 2101 (42h) • SARLAFT 2.0 •
+            Copiloto Táctico IA &amp; SHA-256.
           </p>
         </section>
 
@@ -377,12 +377,17 @@ export function VistaAccesoTactico({
 
           {pestanaActiva === "ingreso" && (
             <div className="space-y-4">
-              {/* Botones de Acceso Rápido Demo para los 5 Roles */}
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 block mb-2.5">
-                  Acceso Rápido Demo (5 Roles RBAC — 1 Clic):
-                </span>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+              {/* Acceso Demo Instantáneo (1 Clic) para Reclutadores y Evaluadores */}
+              <div className="rounded-xl border border-emerald-500/35 bg-gradient-to-br from-emerald-950/40 via-slate-950/80 to-cyan-950/30 p-4 shadow-lg shadow-emerald-950/30">
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
+                    Acceso Demo Instantáneo (1 Clic)
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Clave auto-inyectada: Sentinel2026*
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-5">
                   {CUENTAS_DEMOSTRACION.map((cuenta) => (
                     <button
                       key={cuenta.correo}
@@ -391,15 +396,15 @@ export function VistaAccesoTactico({
                       onClick={(): void => {
                         void ingresarConCuentaDemo(cuenta);
                       }}
-                      className="rounded-lg border border-white/10 bg-slate-950 p-2 text-center transition hover:border-emerald-400 hover:bg-emerald-500/10"
+                      className="group rounded-xl border border-white/10 bg-slate-950/90 p-2.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-400/70 hover:bg-emerald-500/10 disabled:opacity-50"
                     >
                       <span
-                        className={`block rounded px-1 py-0.5 text-[9px] font-bold ${cuenta.colorDistintivo}`}
+                        className={`block rounded-md px-1.5 py-0.5 text-[10px] font-bold text-center transition ${cuenta.colorDistintivo}`}
                       >
                         {cuenta.etiquetaRol}
                       </span>
-                      <span className="text-[10px] font-semibold text-white block mt-1 truncate">
-                        {cuenta.correo.split("@")[0]}
+                      <span className="text-[10px] font-medium text-slate-300 group-hover:text-white block mt-1.5 text-center truncate">
+                        {cuenta.subtituloPrioridad}
                       </span>
                     </button>
                   ))}

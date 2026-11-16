@@ -73,6 +73,8 @@ import type {
   AuditoriaAntifraudeRondas,
   RespuestaSabotajeForense,
   RespuestaReparacionForense,
+  SolicitudCopilotoTactico,
+  RespuestaCopilotoTactico,
   TurnoOperativo,
   UsuarioSistema,
 } from "../tipos/tipos_sistema";
@@ -954,6 +956,16 @@ export async function servicioSimularSabotajeForense(
 export async function servicioRepararCadenaForense(): Promise<RespuestaReparacionForense> {
   const respuesta = await clienteApi.post<RespuestaReparacionForense>(
     "/api/inteligencia/forense/reparar-cadena"
+  );
+  return respuesta.data;
+}
+
+export async function servicioConsultarCopilotoTactico(
+  datos: SolicitudCopilotoTactico
+): Promise<RespuestaCopilotoTactico> {
+  const respuesta = await clienteApi.post<RespuestaCopilotoTactico>(
+    "/api/inteligencia/copiloto",
+    datos
   );
   return respuesta.data;
 }

@@ -430,7 +430,7 @@ export function App(): ReactElement {
                     SENTINEL <span className="text-emerald-400">//</span> OPS
                   </h1>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400 block">
-                    Enterprise V5.0 • Colombia
+                    Enterprise V5.1 • Colombia
                   </span>
                 </div>
               </div>

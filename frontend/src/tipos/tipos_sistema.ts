@@ -1040,4 +1040,23 @@ export interface RespuestaReparacionForense {
   auditoria_post_reparacion: IntegridadBlockchainInfo;
 }
 
+export interface SolicitudCopilotoTactico {
+  consulta: string;
+  puesto_id?: number;
+}
+
+export interface RespuestaCopilotoTactico {
+  respuesta_ejecutiva: string;
+  nivel_riesgo: "BAJO" | "MODERADO" | "ALTO" | "CRITICO";
+  modo_motor: "LLM_TOOL_CALLING" | "FALLBACK_DETERMINISTICO_LOCAL";
+  tenant_id_aislado: string;
+  puesto_restringido_id: number | null;
+  intento_inyeccion_detectado: boolean;
+  herramientas_ejecutadas: string[];
+  datos_herramientas: Record<string, unknown>;
+  hashes_sha256_citados: string[];
+  recomendaciones_tacticas: string[];
+  timestamp_utc: string;
+}
+
 

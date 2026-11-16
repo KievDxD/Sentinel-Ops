@@ -89,10 +89,22 @@ def _verificar_y_sincronizar_esquema(conexion_sincrona: object) -> None:
 
 
 async def inicializar_motor_base_datos() -> str:
-    """Crea o actualiza el esquema de tablas V2.0 en el motor activo."""
+    """Crea o actualiza el esquema de tablas V5.1 en el motor activo."""
     async with motor_activo.begin() as conexion:
         await conexion.run_sync(_verificar_y_sincronizar_esquema)
     return motor_en_uso_descripcion
+
+
+def _recrear_esquema_limpio(conexion_sincrona: object) -> None:
+    """Elimina y vuelve a crear todas las tablas para restaurar el entorno demo limpio."""
+    BaseModeloDeclarativo.metadata.drop_all(bind=conexion_sincrona)  # type: ignore[arg-type]
+    BaseModeloDeclarativo.metadata.create_all(bind=conexion_sincrona)  # type: ignore[arg-type]
+
+
+async def restaurar_base_datos_demo_limpia() -> None:
+    """Reinicia el esquema activo en el motor de BD para recargar la semilla demo."""
+    async with motor_activo.begin() as conexion:
+        await conexion.run_sync(_recrear_esquema_limpio)
 
 
 async def obtener_sesion_bd() -> AsyncGenerator[AsyncSession, None]:
