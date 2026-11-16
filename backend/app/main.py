@@ -8,10 +8,12 @@ import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
+from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 import app.modelos.modelos_bd  # noqa: F401 - Registra todos los modelos en Base.metadata
 from app.esquemas.esquemas_pydantic import RespuestaEstadoSistema
@@ -124,14 +126,39 @@ aplicacion.include_router(enrutador_inteligencia)
 aplicacion.add_api_websocket_route("/ws/minuta", endpoint_websocket_minuta)
 
 
+def _resolver_directorio_frontend_dist() -> Path | None:
+    """Detecta el bundle compilado de React (frontend_dist) en Docker o despliegue local."""
+    candidatos: tuple[Path, ...] = (
+        Path("frontend_dist"),
+        Path("/app/frontend_dist"),
+        Path(__file__).resolve().parent.parent / "frontend_dist",
+        Path(__file__).resolve().parent.parent.parent / "frontend_dist",
+    )
+    for directorio in candidatos:
+        if directorio.is_dir() and (directorio / "index.html").is_file():
+            return directorio.resolve()
+    return None
+
+
+DIRECTORIO_FRONTEND_DIST: Path | None = _resolver_directorio_frontend_dist()
+if DIRECTORIO_FRONTEND_DIST is not None and (DIRECTORIO_FRONTEND_DIST / "assets").is_dir():
+    aplicacion.mount(
+        "/assets",
+        StaticFiles(directory=str(DIRECTORIO_FRONTEND_DIST / "assets"), html=False),
+        name="frontend_assets",
+    )
+
+
 @aplicacion.get(
     "/",
-    response_class=HTMLResponse,
-    summary="Portal de bienvenida y diagnóstico rápido del Centro de Mando Táctico",
+    response_class=Response,
+    summary="Portal principal SPA en producción o bienvenida diagnóstica en desarrollo",
     include_in_schema=False,
 )
-async def inicio_centro_mando() -> HTMLResponse:
-    """Retorna un panel táctico HTML con enlaces directos a la documentación y el frontend."""
+async def inicio_centro_mando() -> Response:
+    """Sirve el frontend compilado si frontend_dist existe; sino, el portal de diagnóstico local."""
+    if DIRECTORIO_FRONTEND_DIST is not None:
+        return FileResponse(DIRECTORIO_FRONTEND_DIST / "index.html")
     return HTMLResponse(
         content="""<!DOCTYPE html>
 <html lang="es">
@@ -198,6 +225,28 @@ async def obtener_estado_sistema() -> RespuestaEstadoSistema:
         conexiones_websocket_activas=gestor_minuta_ws.cantidad_conectados(),
         tope_horas_semanales_ley_2101=configuracion.tope_horas_semanales,
     )
+
+
+@aplicacion.get("/{full_path:path}", include_in_schema=False)
+async def servir_spa_produccion(full_path: str) -> Response:
+    """Catch-all de producción para servir activos estáticos de React o el fallback SPA."""
+    if full_path.startswith("api/") or full_path.startswith("ws/") or full_path in {
+        "api",
+        "ws",
+        "docs",
+        "redoc",
+        "openapi.json",
+    }:
+        raise HTTPException(status_code=404, detail="Endpoint no encontrado")
+    if DIRECTORIO_FRONTEND_DIST is None:
+        raise HTTPException(status_code=404, detail="Ruta no encontrada")
+    archivo_objetivo = (DIRECTORIO_FRONTEND_DIST / full_path).resolve()
+    if (
+        archivo_objetivo.is_relative_to(DIRECTORIO_FRONTEND_DIST)
+        and archivo_objetivo.is_file()
+    ):
+        return FileResponse(archivo_objetivo)
+    return FileResponse(DIRECTORIO_FRONTEND_DIST / "index.html")
 
 
 app: FastAPI = aplicacion
