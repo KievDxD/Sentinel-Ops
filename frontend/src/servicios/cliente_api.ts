@@ -79,12 +79,30 @@ import type {
   UsuarioSistema,
 } from "../tipos/tipos_sistema";
 
-export const URL_BASE_API: string =
-  (import.meta.env.VITE_URL_BASE_API as string | undefined) ??
-  "http://localhost:8000";
+const urlApiEntorno = (
+  (import.meta.env.VITE_API_URL as string | undefined) ||
+  (import.meta.env.VITE_URL_BASE_API as string | undefined) ||
+  ""
+).trim();
 
-export const URL_WEBSOCKET_MINUTA: string =
-  URL_BASE_API.replace(/^http/, "ws") + "/ws/minuta";
+export const URL_BASE_API: string = urlApiEntorno
+  ? urlApiEntorno.replace(/\/+$/, "")
+  : import.meta.env.PROD
+    ? ""
+    : "http://localhost:8000";
+
+function resolverUrlWebsocketMinuta(): string {
+  if (URL_BASE_API.startsWith("http")) {
+    return `${URL_BASE_API.replace(/^http/, "ws")}/ws/minuta`;
+  }
+  if (typeof window !== "undefined") {
+    const protocoloWs = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${protocoloWs}//${window.location.host}/ws/minuta`;
+  }
+  return "/ws/minuta";
+}
+
+export const URL_WEBSOCKET_MINUTA: string = resolverUrlWebsocketMinuta();
 
 export const clienteApi: AxiosInstance = axios.create({
   baseURL: URL_BASE_API,

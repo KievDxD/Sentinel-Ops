@@ -93,14 +93,27 @@ aplicacion: FastAPI = FastAPI(
     lifespan=ciclo_vida_aplicacion,
 )
 
-origenes_permitidos: list[str] = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+origenes_env = [
+    o.strip()
+    for o in configuracion.cors_origins.split(",")
+    if o.strip()
 ]
+origenes_permitidos: list[str] = list(
+    dict.fromkeys(
+        [
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "https://sentinel-ops-hmfp.onrender.com",
+            "*",
+            *origenes_env,
+        ]
+    )
+)
 
 aplicacion.add_middleware(
     CORSMiddleware,
     allow_origins=origenes_permitidos,
+    allow_origin_regex=r"https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
