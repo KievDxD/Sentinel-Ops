@@ -745,3 +745,299 @@ export interface RespuestaImportacionUsuariosCsv {
   errores: string[];
   usuarios_creados: UsuarioSistema[];
 }
+
+// ============================================================================
+// RELEASE V4.0: SIMULACIÓN VIVA, TELEMETRÍA DINÁMICA Y KPIS TIEMPO REAL
+// ============================================================================
+export interface IntegridadBlockchainInfo {
+  INTEGRIDAD_VERIFICADA: boolean;
+  integridad_verificada: boolean;
+  total_bloques_auditados: number;
+  bloques_minuta: number;
+  bloques_actas_relevo: number;
+  bloques_kardex_balistico: number;
+  bloques_corruptos: number;
+  bloque_corrupto_id?: number | null;
+  hash_esperado?: string | null;
+  hash_calculado?: string | null;
+  hash_genesis_referencia: string;
+  hash_raiz_merkle: string;
+}
+
+export interface SlaPuestoKpi {
+  puesto_id: number;
+  codigo_puesto: string;
+  nombre_puesto: string;
+  ciudad: string;
+  requiere_armamento: boolean;
+  puntos_totales: number;
+  marcaciones_exitosas: number;
+  porcentaje_sla: number;
+  visitantes_activos: number;
+}
+
+export interface KpisTiempoReal {
+  porcentaje_sla_global: number;
+  sla_por_puesto: SlaPuestoKpi[];
+  costo_nomina_acumulado_cop: number;
+  horas_ordinarias_totales: number;
+  horas_extras_totales: number;
+  horas_recargo_nocturno_totales: number;
+  horas_dominicales_totales: number;
+  tope_semanal_ley_2101: number;
+  tiempo_promedio_reaccion_sos_segundos: number;
+  total_alertas_sos_atendidas: number;
+  ocupacion_perimetral_total: number;
+  credenciales_sv_alerta_conteo: number;
+  salvoconductos_indumil_alerta_conteo: number;
+  integridad_blockchain: IntegridadBlockchainInfo;
+  simulacion_viva_activa: boolean;
+  rafagas_ejecutadas: number;
+  conexiones_websocket_activas: number;
+}
+
+export interface ResultadoRafagaOperativa {
+  rafaga_numero: number;
+  puesto_afectado: string;
+  nombre_puesto: string;
+  operador_ejecutor: string;
+  acceso_garita_creado: string;
+  ronda_qr_verificada: string;
+  minuta_registro_id: number;
+  sello_sha256_generado: string;
+  hash_anterior_encadenado: string;
+  integridad_blockchain_verificada: boolean;
+  total_bloques_cadena: number;
+  timestamp: string;
+}
+
+export interface EstadoSimulacionViva {
+  simulacion_viva_activa: boolean;
+  tick_telemetria: number;
+  rafagas_ejecutadas: number;
+}
+
+// ============================================================================
+// RELEASE ENTERPRISE V5.0: OPERACIONES ESPECIALES, K9, SARLAFT, SG-SST & IA FORENSE
+// ============================================================================
+export interface MisionEscoltaBasc {
+  mision_id: number;
+  codigo_mision: string;
+  tipo_mision: string;
+  descripcion_ruta: string;
+  corredor_vial: string;
+  vehiculo_placa: string;
+  nivel_blindaje: "NIVEL_IIIA" | "NIVEL_IV" | "NIVEL_V" | string;
+  escolta_id: number;
+  escolta_nombre?: string;
+  escolta_codigo?: string;
+  serial_arma_indumil: string;
+  lat_origen?: number;
+  lon_origen?: number;
+  lat_destino?: number;
+  lon_destino?: number;
+  lat_actual?: number;
+  lon_actual?: number;
+  distancia_ruta_km: number;
+  desviacion_metros: number;
+  umbral_desvio_metros: number;
+  estado_mision: string;
+  sello_manifiesto_sha256: string;
+  hash_anterior_sha256: string | null;
+  fecha_despacho: string;
+}
+
+export interface SolicitudCrearEscoltaBasc {
+  tipo_mision: string;
+  descripcion_ruta: string;
+  corredor_vial: string;
+  vehiculo_placa: string;
+  nivel_blindaje: "NIVEL_IIIA" | "NIVEL_IV" | "NIVEL_V";
+  escolta_id?: number;
+  serial_arma_indumil: string;
+  lat_origen: number;
+  lon_origen: number;
+  lat_destino: number;
+  lon_destino: number;
+  umbral_desvio_metros?: number;
+}
+
+export interface RespuestaVerificarCorredorEscolta {
+  mision_id: number;
+  codigo_mision: string;
+  estado_mision: string;
+  desviacion_metros: number;
+  umbral_desvio_metros: number;
+  alerta_desvio_disparada: boolean;
+  registro_minuta_alerta_id: number | null;
+  mensaje_tactico: string;
+}
+
+export interface BinomioCaninoK9 {
+  k9_id: number;
+  codigo_unidad_k9: string;
+  nombre_canino: string;
+  raza: string;
+  especialidad: "EXPLOSIVOS" | "NARCOTICOS" | "DEFENSA_CONTROLADA" | string;
+  codigo_microchip: string;
+  guia_operador_id: number;
+  guia_nombre: string;
+  guia_codigo: string;
+  puesto_id: number;
+  puesto_codigo: string;
+  puesto_nombre: string;
+  vacunacion_vigente: boolean;
+  fecha_vencimiento_vacunas: string;
+  horas_trabajadas_turno: number;
+  max_horas_continuas_norma: number;
+  porcentaje_fatiga: number;
+  estado_fatiga: string;
+  semaforo_normativo_k9: string;
+  bloqueado_por_fatiga: boolean;
+  ultimo_descanso_canil: string;
+  observaciones_veterinarias: string;
+}
+
+export interface MedioTecnologicoPuesto {
+  medio_id: number;
+  codigo_dispositivo: string;
+  puesto_id: number;
+  puesto_codigo: string;
+  puesto_nombre: string;
+  tipo_dispositivo: string;
+  ubicacion_detalle: string;
+  estado_operativo: "ONLINE" | "BATERIA_RESPALDO" | "SABOTAJE_ALERTA" | string;
+  latencia_ms: number;
+  voltaje_cerca_kv: number;
+  bateria_respaldo_pct: number;
+  ultima_telemetria: string;
+}
+
+export interface CertificadoSarlaft {
+  certificado_id: number;
+  codigo_certificado: string;
+  documento_consultado: string;
+  nombre_consultado: string;
+  tipo_tercero: "ASPIRANTE_GUARDA" | "CLIENTE_B2B" | "VISITANTE_CRITICO" | string;
+  nivel_riesgo: "SIN_COINCIDENCIAS" | "RIESGO_MEDIO_PEP" | "BLOQUEO_LISTA_RESTRICTIVA" | string;
+  listas_coincidentes: string[];
+  listas_evaluadas: string[];
+  apto_contratacion_ingreso: boolean;
+  detalle_validacion: string;
+  sello_auditoria_sha256: string;
+  hash_anterior_sha256: string | null;
+  fecha_consulta: string;
+}
+
+export interface SemaforoChalecoKevlar {
+  puesto_id: number;
+  puesto_codigo: string;
+  puesto_nombre: string;
+  serial_lote_kevlar: string;
+  nivel_proteccion_nij: string;
+  unidades_en_puesto: number;
+  fecha_fabricacion: string;
+  fecha_vencimiento_5_anos: string;
+  dias_restantes_vida_util: number;
+  semaforo_kevlar: "VIGENTE_CERTIFICADO" | "POR_VENCER_6_MESES" | "VENCIDO_REEMPLAZO_INMEDIATO" | string;
+}
+
+export interface RespuestaCheckAptitudSst {
+  check_id: number;
+  operador_id: number;
+  puesto_id: number;
+  horas_sueno_reportadas: number;
+  cero_alcohol_fatiga: boolean;
+  chaleco_kevlar_verificado: boolean;
+  serial_chaleco_asignado: string;
+  apto_operacion: boolean;
+  estado_evaluacion: string;
+  alerta_sst_disparada: boolean;
+  sello_sst_sha256: string;
+  fecha_check: string;
+}
+
+export interface MonitorHombreCaido {
+  monitoreo_id: number;
+  puesto_id: number;
+  puesto_codigo: string;
+  puesto_nombre: string;
+  operador_id: number;
+  operador_nombre: string;
+  operador_codigo: string;
+  intervalo_esperado_min: number;
+  ultimo_latido_utc: string;
+  segundos_sin_pulso: number;
+  segundos_restantes_ventana: number;
+  estado_supervivencia: "ACTIVO_NORMAL" | "PRE_ALERTA_INACTIVIDAD" | "ALERTA_HOMBRE_CAIDO_SOS" | string;
+  latidos_consecutivos_exitosos: number;
+  alertas_disparadas_turno: number;
+}
+
+export interface BoletinRelevoIA {
+  puesto_id: number;
+  puesto_codigo: string;
+  puesto_nombre: string;
+  ciudad: string;
+  ventana_analisis_horas: number;
+  nivel_amenaza: "BAJO" | "MODERADO" | "ALTO" | "CRITICO";
+  total_eventos_analizados: number;
+  visitantes_activos_en_recinto: number;
+  hallazgos_clave: string[];
+  placas_recurrentes: string[];
+  estado_dotacion: {
+    serial_armamento: string;
+    municion_reglamentaria: number;
+    municion_verificada_ultimo_relevo: number;
+    estado_armamento: string;
+    alerta_balistica_activa: boolean;
+    observacion_relevo: string;
+  };
+  recomendaciones_tacticas: string[];
+  sello_boletin_sha256: string;
+  generado_en: string;
+}
+
+export interface AnomaliaRondaAntifraude {
+  anomalia_id: string;
+  tipo_anomalia: string;
+  severidad: "CRITICA" | "ALTA" | "MEDIA";
+  puesto_codigo: string;
+  punto_nombre: string;
+  operador_nombre: string;
+  distancia_detectada_metros: number;
+  velocidad_estimada_kmh: number;
+  diagnostico_forense: string;
+  fecha_deteccion: string;
+}
+
+export interface AuditoriaAntifraudeRondas {
+  total_marcaciones_auditadas: number;
+  marcaciones_conformes_geocerca: number;
+  total_anomalias_detectadas: number;
+  indice_confiabilidad_rondas_pct: number;
+  anomalias: AnomaliaRondaAntifraude[];
+  fecha_auditoria: string;
+}
+
+export interface RespuestaSabotajeForense {
+  operacion: string;
+  detalle_sabotaje: {
+    sabotaje_aplicado: boolean;
+    registro_id: number;
+    puesto_id: number;
+    texto_original_respaldado: string;
+    texto_adulterado: string;
+    sello_sha256_original: string;
+  };
+  auditoria_resultante: IntegridadBlockchainInfo;
+}
+
+export interface RespuestaReparacionForense {
+  reparacion_exitosa: boolean;
+  registros_restaurados: number;
+  ids_restaurados: number[];
+  auditoria_post_reparacion: IntegridadBlockchainInfo;
+}
+
+

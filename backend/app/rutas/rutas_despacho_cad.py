@@ -31,11 +31,19 @@ from app.modelos.modelos_bd import (
 from app.nucleo.base_datos import obtener_sesion_bd
 from app.nucleo.seguridad import requerir_roles
 from app.rutas.rutas_rondas import calcular_distancia_haversine_metros
+from app.servicios.simulador_operativo import (
+    ejecutar_rafaga_operativa,
+    gestor_simulacion,
+)
 
 enrutador_cad = APIRouter(
     prefix="/api/cad",
     tags=["Fase 11 - Centro de Despacho CAD & Monitoreo GPS en Vivo"],
 )
+
+
+class SolicitudAlternarSimulacion(BaseModel):
+    activar: bool | None = None
 
 
 class TelemetriaPuestoMapa(BaseModel):
@@ -116,14 +124,13 @@ async def obtener_telemetria_mapa(
     alertas_activas = res_alertas.scalars().all()
     puestos_en_sos = {a.puesto_id for a in alertas_activas}
 
-    # Coordenadas base de puestos en Bogotá y Medellín
+    # Coordenadas reales georreferenciadas en Bogotá D.C. y Sabana de Occidente
     lista_puestos: list[TelemetriaPuestoMapa] = []
-    base_lats = [4.6533, 4.6720, 6.2088]
-    base_lngs = [-74.0836, -74.0511, -75.5670]
 
     for idx, p in enumerate(puestos):
-        lat = base_lats[idx % len(base_lats)]
-        lng = base_lngs[idx % len(base_lngs)]
+        lat, lng, _radio = gestor_simulacion.obtener_coordenadas_puesto(
+            p.codigo_puesto, idx
+        )
         estado = "ALERTA_SOS" if p.puesto_id in puestos_en_sos else "NORMAL"
         lista_puestos.append(
             TelemetriaPuestoMapa(
@@ -158,12 +165,9 @@ async def obtener_telemetria_mapa(
     supervisores_ocupados = {d.supervisor_id for d in despachos_activos}
 
     lista_supervisores: list[TelemetriaSupervisorMapa] = []
-    lats_sup = [4.6610, 4.6450, 6.2150]
-    lngs_sup = [-74.0720, -74.0610, -75.5720]
 
-    for idx, s in enumerate(supervisores):
-        lat = lats_sup[idx % len(lats_sup)]
-        lng = lngs_sup[idx % len(lngs_sup)]
+    for s in supervisores:
+        lat, lng = gestor_simulacion.obtener_coordenadas_supervisor(s.codigo_placa)
         disp = "EN_DESPACHO" if s.usuario_id in supervisores_ocupados else "DISPONIBLE"
         lista_supervisores.append(
             TelemetriaSupervisorMapa(
@@ -184,47 +188,6 @@ async def obtener_telemetria_mapa(
 
 
 @enrutador_cad.get(
-    "/red-apoyo-ponal",
-    response_model=InfoRedApoyoPonal,
-    summary="Contactos de Emergencia Red de Apoyo PONAL / CAI de Policía",
-)
-async def obtener_red_apoyo_ponal(
-    _usuario_actual: ModeloUsuario = Depends(
-        requerir_roles(
-            RolUsuario.ADMINISTRADOR,
-            RolUsuario.SUPERVISOR,
-            RolUsuario.OPERADOR,
-        )
-    ),
-) -> InfoRedApoyoPonal:
-    """Retorna líneas de enlace directo con la Policía Nacional y cuadrantes asignados."""
-    return InfoRedApoyoPonal(
-        linea_emergencia_nacional="123",
-        red_apoyo_supervigilancia="#767",
-        cuadrantes=[
-            CuadrantePoliciaPuesto(
-                puesto_id=1,
-                cai_jurisdiccion="CAI Chapinero Alto - Bogotá",
-                telefono_cuadrante="+57 301 234 5678",
-                canal_radio_frecuencia="Red Apoyo VHF 154.200 MHz",
-            ),
-            CuadrantePoliciaPuesto(
-                puesto_id=2,
-                cai_jurisdiccion="CAI Fontibón Zona Franca",
-                telefono_cuadrante="+57 301 876 5432",
-                canal_radio_frecuencia="Red Apoyo VHF 154.450 MHz",
-            ),
-            CuadrantePoliciaPuesto(
-                puesto_id=3,
-                cai_jurisdiccion="CAI El Poblado - Medellín",
-                telefono_cuadrante="+57 300 998 7766",
-                canal_radio_frecuencia="Red Apoyo VHF 155.100 MHz",
-            ),
-        ],
-    )
-
-
-@enrutador_cad.get(
     "/sugerir-patrulla/{alerta_sos_id}",
     response_model=list[CandidatoSupervisorCercano],
     summary="Calcular Patrulla Más Cercana con Distancia Haversine y ETA",
@@ -236,7 +199,7 @@ async def sugerir_patrulla_mas_cercana(
     ),
     sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
 ) -> list[CandidatoSupervisorCercano]:
-    """Calcula la distancia geodésica y el ETA asumiendo 45 km/h de reacción."""
+    """Calcula la distancia geodésica y el ETA asumiendo 40 km/h de reacción."""
     consulta_alerta = select(ModeloAlertaPanicoSos).where(
         ModeloAlertaPanicoSos.alerta_id == alerta_sos_id
     )
@@ -258,20 +221,18 @@ async def sugerir_patrulla_mas_cercana(
     supervisores = res_supervisores.scalars().all()
 
     candidatos: list[CandidatoSupervisorCercano] = []
-    lats_sup = [4.6610, 4.6450, 6.2150]
-    lngs_sup = [-74.0720, -74.0610, -75.5720]
 
-    for idx, sup in enumerate(supervisores):
-        lat_sup = lats_sup[idx % len(lats_sup)]
-        lng_sup = lngs_sup[idx % len(lngs_sup)]
+    for sup in supervisores:
+        lat_sup, lng_sup = gestor_simulacion.obtener_coordenadas_supervisor(
+            sup.codigo_placa
+        )
 
         distancia_metros = calcular_distancia_haversine_metros(
             alerta.latitud_gps, alerta.longitud_gps, lat_sup, lng_sup
         )
         distancia_km = round(distancia_metros / 1000.0, 2)
 
-        # Velocidad promedio motorizada urbana de emergencia = 40 km/h
-        # Tiempo en horas = distancia_km / 40 -> minutos = (distancia_km / 40) * 60 = distancia_km * 1.5
+        # Velocidad promedio motorizada urbana/intermunicipal de emergencia = 40 km/h
         eta_minutos = max(1.5, round(distancia_km * 1.5, 1))
 
         candidatos.append(
@@ -538,14 +499,17 @@ async def consultar_red_apoyo_ponal(
     puestos = res_puestos.scalars().all()
 
     cuadrantes: list[CuadrantePoliciaPuesto] = []
-    cais_ejemplo = [
-        ("CAI Chicó Norte", "3015550123", "Frecuencia VHF 154.600 MHz"),
-        ("CAI San Fernando", "3015550456", "Frecuencia VHF 154.850 MHz"),
-        ("CAI El Poblado", "3025550789", "Frecuencia UHF 460.125 MHz"),
+    cais_bogota_sabana = [
+        ("CAI Lourdes / Chapinero Central (MEBOG)", "+57 301 445 1120", "Red Apoyo VHF 154.600 MHz - Canal 1"),
+        ("Estación Policía Madrid / Sabana Occidente (DECUN)", "+57 312 489 3310", "Red Apoyo VHF 155.125 MHz - Corredor Calle 13"),
+        ("CAI Siberia / Cota - Autopista Medellín (DECUN)", "+57 310 772 8840", "Red Apoyo UHF 460.250 MHz - Zona Franca"),
+        ("Comando Policía Facatativá - Cartagenita (DECUN)", "+57 314 229 6501", "Red Apoyo VHF 155.400 MHz - Occidente"),
+        ("CAI Ciudad Salitre / Modelia (MEBOG)", "+57 300 618 9022", "Red Apoyo VHF 154.850 MHz - Canal 3"),
+        ("CAI Gorgonzola / Puente Aranda Industrial (MEBOG)", "+57 301 904 7115", "Red Apoyo UHF 462.100 MHz - Zona Industrial"),
     ]
 
     for idx, p in enumerate(puestos):
-        cai, tel, freq = cais_ejemplo[idx % len(cais_ejemplo)]
+        cai, tel, freq = cais_bogota_sabana[idx % len(cais_bogota_sabana)]
         cuadrantes.append(
             CuadrantePoliciaPuesto(
                 puesto_id=p.puesto_id,
@@ -557,6 +521,57 @@ async def consultar_red_apoyo_ponal(
 
     return InfoRedApoyoPonal(
         linea_emergencia_nacional="123",
-        red_apoyo_supervigilancia="018000-119-750",
+        red_apoyo_supervigilancia="018000-119-750 / #767",
         cuadrantes=cuadrantes,
     )
+
+
+@enrutador_cad.post(
+    "/simular-rafaga-operativa",
+    summary="Disparar Ráfaga Operativa en Vivo con Encadenamiento SHA-256 (V4.0)",
+)
+async def simular_rafaga_operativa_endpoint(
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.OPERADOR,
+            RolUsuario.RRHH,
+        )
+    ),
+    sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
+) -> dict:
+    """
+    Inyecta al instante un paquete de eventos realistas encadenados con SHA-256:
+    1) Nuevo ingreso vehicular LPR en garita.
+    2) Marcación de ronda QR/GPS con validación Haversine.
+    3) Anotación de minuta en vivo transmitida por WebSocket y encadenada con SHA-256.
+    4) Actualización de posición GPS de patrullas motorizadas CAD.
+    """
+    return await ejecutar_rafaga_operativa(sesion_bd)
+
+
+@enrutador_cad.post(
+    "/simulacion-viva/alternar",
+    summary="Activar o Desactivar el Motor de Simulación Viva en Segundo Plano (V4.0)",
+)
+async def alternar_simulacion_viva_endpoint(
+    solicitud: SolicitudAlternarSimulacion | None = None,
+    _usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.OPERADOR,
+            RolUsuario.RRHH,
+        )
+    ),
+) -> dict:
+    """Activa o detiene el bucle asíncrono de telemetría GPS de patrullas CAD."""
+    activar_flag = solicitud.activar if solicitud is not None else None
+    activa = gestor_simulacion.alternar_modo_simulacion(activar=activar_flag)
+    return {
+        "simulacion_viva_activa": activa,
+        "tick_telemetria": gestor_simulacion.tick_telemetria,
+        "rafagas_ejecutadas": gestor_simulacion.rafagas_ejecutadas,
+    }
+

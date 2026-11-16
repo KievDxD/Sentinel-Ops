@@ -58,7 +58,9 @@ FabricaSesionesAsincronas: async_sessionmaker[AsyncSession] = async_sessionmaker
 
 
 def _verificar_y_sincronizar_esquema(conexion_sincrona: object) -> None:
-    """Verifica si el esquema V2.0 está completo; si faltan columnas o tablas nuevas, recrea limpiamente."""
+    """Verifica si el esquema V4.0 está completo; si faltan columnas o sedes V4.0, recrea limpiamente."""
+    from sqlalchemy import text
+
     inspector = inspect(conexion_sincrona)
     if inspector is not None:
         tablas_existentes = inspector.get_table_names()
@@ -66,11 +68,22 @@ def _verificar_y_sincronizar_esquema(conexion_sincrona: object) -> None:
             columnas_usuarios = {
                 col["name"] for col in inspector.get_columns("usuarios")
             }
-            if (
+            recrear = (
                 "numero_credencial_sv" not in columnas_usuarios
                 or "tenant_id" not in columnas_usuarios
                 or "dotacion_armamento_puesto" not in tablas_existentes
-            ):
+                or "misiones_escolta_basc" not in tablas_existentes
+            )
+            if not recrear and "puestos_vigilancia" in tablas_existentes:
+                try:
+                    conteo = conexion_sincrona.execute(  # type: ignore[attr-defined]
+                        text("SELECT COUNT(*) FROM puestos_vigilancia")
+                    ).scalar()
+                    if conteo is not None and 0 < int(conteo) < 6:
+                        recrear = True
+                except Exception:
+                    pass
+            if recrear:
                 BaseModeloDeclarativo.metadata.drop_all(bind=conexion_sincrona)  # type: ignore[arg-type]
     BaseModeloDeclarativo.metadata.create_all(bind=conexion_sincrona)  # type: ignore[arg-type]
 

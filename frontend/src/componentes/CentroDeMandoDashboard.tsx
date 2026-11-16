@@ -54,6 +54,7 @@ import {
   servicioListarPuestos,
   servicioListarUsuarios,
   servicioObtenerDotacionPuesto,
+  servicioObtenerKpisTiempoReal,
 } from "../servicios/cliente_api";
 import { usarAlmacenAutenticacion } from "../estado/almacen_autenticacion";
 import type {
@@ -62,6 +63,7 @@ import type {
   AlertaPanicoSos,
   DotacionPuesto,
   EstadoItemDotacion,
+  KpisTiempoReal,
   PuestoVigilancia,
   RegistroMinuta,
   ResumenLiquidacionTurnos,
@@ -145,6 +147,10 @@ export function CentroDeMandoDashboard(): ReactElement {
   const [dotacionMiPuesto, setDotacionMiPuesto] =
     useState<DotacionPuesto | null>(null);
   const [actasRelevo, setActasRelevo] = useState<ActaRelevoPuesto[]>([]);
+  const [kpisVivo, setKpisVivo] = useState<KpisTiempoReal | null>(null);
+  const [filtroPuestoId, setFiltroPuestoId] = useState<number | "TODOS">(
+    "TODOS"
+  );
 
   const [cargando, setCargando] = useState<boolean>(true);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
@@ -194,6 +200,7 @@ export function CentroDeMandoDashboard(): ReactElement {
         listaCobertura,
         listaSos,
         listaActas,
+        datosKpis,
       ] = await Promise.all([
         servicioListarPuestos(),
         servicioListarUsuarios(),
@@ -205,6 +212,7 @@ export function CentroDeMandoDashboard(): ReactElement {
         servicioAuditarCoberturaPuestos(),
         servicioListarAlertasSos(false),
         servicioListarActasRelevo(puestoFiltro),
+        servicioObtenerKpisTiempoReal(),
       ]);
 
       setPuestos(listaPuestos);
@@ -214,6 +222,7 @@ export function CentroDeMandoDashboard(): ReactElement {
       setAlertasCobertura(listaCobertura);
       setAlertasSos(listaSos);
       setActasRelevo(listaActas.slice(0, 4));
+      setKpisVivo(datosKpis);
 
       const idPuestoDotacion =
         puestoFiltro ?? listaPuestos[0]?.puesto_id ?? 1;
@@ -231,8 +240,18 @@ export function CentroDeMandoDashboard(): ReactElement {
     }
   }, [esCliente, esOperador, usuarioActual?.puesto_base_id, usuarioActual?.usuario_id]);
 
-  useEffect((): void => {
+  useEffect((): (() => void) => {
     void cargarDatosCentroMando();
+    const recargarPorRafaga = (): void => {
+      void cargarDatosCentroMando();
+    };
+    window.addEventListener("sentinel:rafaga-operativa", recargarPorRafaga);
+    return (): void => {
+      window.removeEventListener(
+        "sentinel:rafaga-operativa",
+        recargarPorRafaga
+      );
+    };
   }, [cargarDatosCentroMando]);
 
   // Lógica de activación del Botón de Pánico SOS (3.2)
@@ -993,9 +1012,134 @@ export function CentroDeMandoDashboard(): ReactElement {
         </div>
       )}
 
+      {/* ================================================================= */}
+      {/* PANEL V4.0: ANALÍTICA EN TIEMPO REAL, SLA MULTISEDE Y AUDITORÍA   */}
+      {/* ================================================================= */}
+      {kpisVivo && !esOperador && (
+        <section className="rounded-2xl border border-emerald-500/30 bg-slate-900/75 p-5 shadow-xl backdrop-blur-xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
+            <div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                TELEMETRÍA & ANALÍTICA EJECUTIVA EN TIEMPO REAL (RELEASE V4.0)
+              </span>
+              <h2 className="text-base font-bold text-white mt-0.5">
+                Cumplimiento SLA por Sede (Bogotá D.C. & Corredor Sabana de
+                Occidente) y Auditoría Blockchain SHA-256
+              </h2>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-mono font-bold text-emerald-300">
+                SLA Global: {kpisVivo.porcentaje_sla_global}%
+              </span>
+              <span className="rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2.5 py-1 font-mono font-bold text-cyan-300">
+                Reacción CAD SOS:{" "}
+                {kpisVivo.tiempo_promedio_reaccion_sos_segundos}s
+              </span>
+              <span className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 font-mono font-bold text-amber-300">
+                Aforo en Planta: {kpisVivo.ocupacion_perimetral_total} activos
+              </span>
+            </div>
+          </div>
+
+          {/* Barras de Progreso de SLA por cada Puesto */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {kpisVivo.sla_por_puesto.map((itemSla) => (
+              <div
+                key={itemSla.puesto_id}
+                className="rounded-xl border border-white/10 bg-slate-950/70 p-3.5 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="rounded bg-cyan-500/15 border border-cyan-500/30 px-2 py-0.5 font-mono text-[10px] font-bold text-cyan-300">
+                    {itemSla.codigo_puesto}
+                  </span>
+                  <span className="text-[11px] font-mono text-slate-400">
+                    {itemSla.ciudad}
+                  </span>
+                </div>
+                <p className="text-xs font-bold text-white truncate">
+                  {itemSla.nombre_puesto}
+                </p>
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-slate-400">
+                    SLA Rondas ({itemSla.marcaciones_exitosas}/
+                    {itemSla.puntos_totales} checkpoints)
+                  </span>
+                  <span
+                    className={`font-mono font-bold ${
+                      itemSla.porcentaje_sla >= 80
+                        ? "text-emerald-400"
+                        : itemSla.porcentaje_sla >= 50
+                          ? "text-amber-300"
+                          : "text-rose-400"
+                    }`}
+                  >
+                    {itemSla.porcentaje_sla}%
+                  </span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-900 border border-white/5">
+                  <div
+                    className={`h-full transition-all ${
+                      itemSla.porcentaje_sla >= 80
+                        ? "bg-emerald-500"
+                        : itemSla.porcentaje_sla >= 50
+                          ? "bg-amber-400"
+                          : "bg-rose-500"
+                    }`}
+                    style={{ width: `${Math.min(100, itemSla.porcentaje_sla)}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1 border-t border-white/5">
+                  <span>
+                    Visitantes/Vehículos Dentro:{" "}
+                    <strong className="text-white">
+                      {itemSla.visitantes_activos}
+                    </strong>
+                  </span>
+                  <span>
+                    {itemSla.requiere_armamento
+                      ? "Modalidad Armada"
+                      : "Canino / Tech"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Resumen de Auditoría Criptográfica SHA-256 y Alertas Preventivas */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-slate-950/80 px-4 py-2.5 text-xs">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-emerald-400 font-bold">
+                ● INTEGRIDAD_VERIFICADA:{" "}
+                {kpisVivo.integridad_blockchain.INTEGRIDAD_VERIFICADA
+                  ? "TRUE"
+                  : "FALSE"}
+              </span>
+              <span className="text-slate-400 font-mono text-[11px]">
+                Total Bloques:{" "}
+                {kpisVivo.integridad_blockchain.total_bloques_auditados} (Minuta:{" "}
+                {kpisVivo.integridad_blockchain.bloques_minuta} • Relevos:{" "}
+                {kpisVivo.integridad_blockchain.bloques_actas_relevo} • Kardex:{" "}
+                {kpisVivo.integridad_blockchain.bloques_kardex_balistico})
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="text-amber-300">
+                Credenciales SV en Alerta:{" "}
+                <strong>{kpisVivo.credenciales_sv_alerta_conteo}</strong>
+              </span>
+              <span className="text-rose-300">
+                Salvoconductos {"<60d"}:{" "}
+                <strong>{kpisVivo.salvoconductos_indumil_alerta_conteo}</strong>
+              </span>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* SECCIÓN CENTRAL: PUESTOS DE VIGILANCIA, GUARDAS EN TURNO Y CREDENCIALES SV */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-3">
           <div className="flex items-center gap-2.5">
             <Building2 className="h-5 w-5 text-cyan-400" />
             <div>
@@ -1013,15 +1157,40 @@ export function CentroDeMandoDashboard(): ReactElement {
             </div>
           </div>
 
-          {!esOperador && !esCliente && (
-            <Link
-              to="/personal-puestos"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300"
-            >
-              <span>Gestionar Credenciales SV & Puestos</span>
-              <ChevronRight className="h-4 w-4" />
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-3">
+            {!esOperador && !esCliente && (
+              <select
+                value={filtroPuestoId}
+                onChange={(e): void =>
+                  setFiltroPuestoId(
+                    e.target.value === "TODOS"
+                      ? "TODOS"
+                      : Number(e.target.value)
+                  )
+                }
+                className="rounded-xl border border-white/15 bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                <option value="TODOS">
+                  Filtrar Sede: Todas las Sedes ({puestos.length} Puestos)
+                </option>
+                {puestos.map((p) => (
+                  <option key={p.puesto_id} value={p.puesto_id}>
+                    {p.codigo_puesto} — {p.nombre_puesto} ({p.ciudad})
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {!esOperador && !esCliente && (
+              <Link
+                to="/personal-puestos"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-400 hover:text-cyan-300"
+              >
+                <span>Gestionar Credenciales SV & Puestos</span>
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
         </div>
 
         {cargando ? (
@@ -1030,7 +1199,12 @@ export function CentroDeMandoDashboard(): ReactElement {
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            {puestosVisibles.map((puesto) => {
+            {puestosVisibles
+              .filter(
+                (p) =>
+                  filtroPuestoId === "TODOS" || p.puesto_id === filtroPuestoId
+              )
+              .map((puesto) => {
               const guardiasDelPuesto = guardias.filter(
                 (g) => g.puesto_base_id === puesto.puesto_id
               );

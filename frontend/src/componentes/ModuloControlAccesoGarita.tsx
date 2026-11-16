@@ -57,7 +57,70 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
     if (puestoSeleccionadoId > 0) {
       cargarActivos(puestoSeleccionadoId);
     }
+    const alDispararRafaga = () => {
+      if (puestoSeleccionadoId > 0) {
+        cargarActivos(puestoSeleccionadoId);
+      }
+    };
+    window.addEventListener("sentinel:rafaga-operativa", alDispararRafaga);
+    return () => {
+      window.removeEventListener("sentinel:rafaga-operativa", alDispararRafaga);
+    };
   }, [puestoSeleccionadoId]);
+
+  const PRESETS_TRAMAS_REALES = [
+    {
+      etiqueta: "👔 Visitante Corporativo (Torre Financiera)",
+      trama:
+        "PubDSK_1 0010203040 VARGAS RESTREPO ALEJANDRO JOSE M 19880415 O+ 00000000",
+      tipo: "PEATONAL_VISITANTE" as TipoAccesoGarita,
+      placa: "",
+      destino: "Banca Corporativa Piso 14 - Chapinero",
+      motivo: "Comité Fiduciario y Auditoría de Riesgos",
+    },
+    {
+      etiqueta: "🛠️ Contratista ARL Nivel V (Data Center / Planta)",
+      trama:
+        "PubDSK_1 0079884512 BENAVIDES CASTRO CAMILO ANDRES M 19840922 A+ 00000000",
+      tipo: "CONTRATISTA" as TipoAccesoGarita,
+      placa: "NOC-401",
+      destino: "Sala Blanca de Servidores Tier-IV",
+      motivo: "Mantenimiento preventivo UPS redundante (Planilla ARL vigente)",
+    },
+    {
+      etiqueta: "🚛 Tractomula Carga Pesada LPR (Sabana / Siberia)",
+      trama:
+        "PubDSK_1 0080441290 CASTIBLANCO ROA RODRIGO HERNAN M 19791103 O+ 00000000",
+      tipo: "VEHICULAR" as TipoAccesoGarita,
+      placa: "KMV-842",
+      destino: "Muelle Logístico #4 - Sabana de Occidente",
+      motivo: "Descargue contenedor 40 pies con precinto satelital BASC",
+    },
+    {
+      etiqueta: "🏍️ Motocicleta Mensajería / Domicilio RUNT",
+      trama:
+        "PubDSK_1 1032456789 MARTINEZ LOPEZ DIANA CAROLINA F 19950618 B+ 00000000",
+      tipo: "VEHICULAR" as TipoAccesoGarita,
+      placa: "XRP-45F",
+      destino: "Recepción Correspondencia / Administración",
+      motivo: "Entrega de valija certificada y radicación documental",
+    },
+  ];
+
+  async function aplicarPresetTramaReal(
+    preset: (typeof PRESETS_TRAMAS_REALES)[number]
+  ) {
+    setTramaEscaneada(preset.trama);
+    setTipoAcceso(preset.tipo);
+    setEmpresaDestino(preset.destino);
+    setMotivoIngreso(preset.motivo);
+    await handleDecodificarTrama(preset.trama);
+    if (preset.placa) {
+      await handleEscanearPlaca(preset.placa);
+    } else {
+      setPlacaVehiculo("");
+    }
+  }
 
   async function cargarPuestos() {
     try {
@@ -282,6 +345,37 @@ export function ModuloControlAccesoGarita(): React.ReactElement {
               Cámara / Pistola USB 2D
             </span>
           </h3>
+
+          {/* Selector Rápido de Tramas Reales de Prueba (V4.0) */}
+          <div className="bg-slate-950 p-3.5 rounded-lg border border-sky-500/30 space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-mono font-bold text-sky-400 uppercase">
+                ⚡ Selector Rápido: Tramas Reales de Prueba (Registraduría PDF417 + LPR)
+              </label>
+              <span className="text-[10px] font-mono text-slate-400">
+                1 Clic → Decodifica en Backend
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PRESETS_TRAMAS_REALES.map((preset, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    void aplicarPresetTramaReal(preset);
+                  }}
+                  className="text-left px-2.5 py-2 rounded-lg border border-slate-700 bg-slate-900/90 hover:border-sky-400 hover:bg-sky-950/40 text-[11px] text-slate-200 transition flex items-center justify-between gap-1"
+                >
+                  <span className="truncate font-medium">{preset.etiqueta}</span>
+                  {preset.placa && (
+                    <span className="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                      {preset.placa}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
 
           {/* Caja de Escaneo Rápido */}
           <div className="bg-slate-950 p-3.5 rounded-lg border border-slate-800">

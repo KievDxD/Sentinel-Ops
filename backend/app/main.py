@@ -24,10 +24,13 @@ from app.rutas.rutas_autenticacion import (
 )
 from app.rutas.rutas_balistica import enrutador_balistica
 from app.rutas.rutas_control_acceso import enrutador_acceso
+from app.rutas.rutas_cumplimiento import enrutador_cumplimiento
 from app.rutas.rutas_despacho_cad import enrutador_cad
 from app.rutas.rutas_facturacion import enrutador_facturacion
+from app.rutas.rutas_inteligencia import enrutador_inteligencia
 from app.rutas.rutas_intercambios import enrutador_intercambios
 from app.rutas.rutas_minuta import endpoint_websocket_minuta, enrutador_minuta
+from app.rutas.rutas_operaciones_especiales import enrutador_operaciones_especiales
 from app.rutas.rutas_reportes import enrutador_reportes
 from app.rutas.rutas_rondas import enrutador_rondas
 from app.rutas.rutas_turnos import enrutador_turnos
@@ -78,6 +81,9 @@ aplicacion.include_router(enrutador_facturacion)
 aplicacion.include_router(enrutador_acceso)
 aplicacion.include_router(enrutador_balistica)
 aplicacion.include_router(enrutador_cad)
+aplicacion.include_router(enrutador_operaciones_especiales)
+aplicacion.include_router(enrutador_cumplimiento)
+aplicacion.include_router(enrutador_inteligencia)
 
 # Ruta WebSocket para la Minuta Digital y Alertas SOS en Tiempo Real
 aplicacion.add_api_websocket_route("/ws/minuta", endpoint_websocket_minuta)

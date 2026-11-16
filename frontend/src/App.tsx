@@ -36,21 +36,34 @@ import {
   UserCheck,
   Crosshair,
   Navigation,
+  Zap,
+  Activity,
+  Lock,
+  Truck,
+  FileCheck2,
+  BrainCircuit,
+  ShieldAlert,
 } from "lucide-react";
 import { format } from "date-fns";
 import { usarAlmacenAutenticacion } from "./estado/almacen_autenticacion";
 import {
   URL_WEBSOCKET_MINUTA,
   extraerMensajeError,
+  servicioAlternarSimulacionViva,
   servicioAtenderAlertaSos,
   servicioConsultarEstado,
   servicioIniciarSesion,
   servicioListarAlertasSos,
+  servicioObtenerKpisTiempoReal,
+  servicioSimularRafagaOperativa,
 } from "./servicios/cliente_api";
 import type {
   AlertaPanicoSos,
+  IntegridadBlockchainInfo,
+  KpisTiempoReal,
   MensajeWebSocketMinuta,
   RespuestaEstadoServidor,
+  ResultadoRafagaOperativa,
   RolUsuario,
   SolicitudInicioSesion,
 } from "./tipos/tipos_sistema";
@@ -65,6 +78,9 @@ import { ModuloTarificadorB2B } from "./componentes/ModuloTarificadorB2B";
 import { ModuloControlAccesoGarita } from "./componentes/ModuloControlAccesoGarita";
 import { ModuloLibroBalistico } from "./componentes/ModuloLibroBalistico";
 import { ModuloDespachoCAD } from "./componentes/ModuloDespachoCAD";
+import { OperacionesEspecialesK9 } from "./componentes/OperacionesEspecialesK9";
+import { CumplimientoSarlaftSST } from "./componentes/CumplimientoSarlaftSST";
+import { InteligenciaForenseIA } from "./componentes/InteligenciaForenseIA";
 
 interface CuentaRapida {
   etiqueta: string;
@@ -187,6 +203,16 @@ export function App(): ReactElement {
   const [atendiendoSosId, setAtendiendoSosId] = useState<number | null>(null);
   const [errorSosGlobal, setErrorSosGlobal] = useState<string | null>(null);
 
+  // Estado V4.0: Simulación Viva, Ráfaga Operativa e Integridad Blockchain SHA-256
+  const [kpisTiempoReal, setKpisTiempoReal] = useState<KpisTiempoReal | null>(
+    null
+  );
+  const [simulacionVivaActiva, setSimulacionVivaActiva] =
+    useState<boolean>(false);
+  const [disparandoRafaga, setDisparandoRafaga] = useState<boolean>(false);
+  const [ultimaRafaga, setUltimaRafaga] =
+    useState<ResultadoRafagaOperativa | null>(null);
+
   useEffect((): (() => void) => {
     const temporizador = setInterval((): void => {
       setHoraActual(format(new Date(), "HH:mm:ss"));
@@ -205,6 +231,17 @@ export function App(): ReactElement {
     }
   }, []);
 
+  const cargarKpisHeader = useCallback(async (): Promise<void> => {
+    if (!usuarioActual) return;
+    try {
+      const kpis = await servicioObtenerKpisTiempoReal();
+      setKpisTiempoReal(kpis);
+      setSimulacionVivaActiva(kpis.simulacion_viva_activa);
+    } catch {
+      // Silencioso en carga inicial
+    }
+  }, [usuarioActual]);
+
   const cargarAlertasSosPendientes = useCallback(async (): Promise<void> => {
     if (!usuarioActual) return;
     try {
@@ -218,7 +255,55 @@ export function App(): ReactElement {
   useEffect((): void => {
     void verificarNucleo();
     void cargarAlertasSosPendientes();
-  }, [verificarNucleo, cargarAlertasSosPendientes]);
+    void cargarKpisHeader();
+  }, [verificarNucleo, cargarAlertasSosPendientes, cargarKpisHeader]);
+
+  useEffect((): (() => void) => {
+    const escucharEstadoBlockchain = (ev: Event): void => {
+      const customEv = ev as CustomEvent<IntegridadBlockchainInfo>;
+      if (customEv.detail) {
+        setKpisTiempoReal((prev) =>
+          prev
+            ? { ...prev, integridad_blockchain: customEv.detail }
+            : prev
+        );
+      }
+    };
+    window.addEventListener(
+      "sentinel:estado-blockchain",
+      escucharEstadoBlockchain
+    );
+    return (): void => {
+      window.removeEventListener(
+        "sentinel:estado-blockchain",
+        escucharEstadoBlockchain
+      );
+    };
+  }, []);
+
+  const manejarAlternarSimulacionViva = async (): Promise<void> => {
+    try {
+      const res = await servicioAlternarSimulacionViva(!simulacionVivaActiva);
+      setSimulacionVivaActiva(res.simulacion_viva_activa);
+      await cargarKpisHeader();
+    } catch {
+      // Silencioso
+    }
+  };
+
+  const manejarDispararRafaga = async (): Promise<void> => {
+    setDisparandoRafaga(true);
+    try {
+      const resultado = await servicioSimularRafagaOperativa();
+      setUltimaRafaga(resultado);
+      await cargarKpisHeader();
+      window.dispatchEvent(new CustomEvent("sentinel:rafaga-operativa"));
+    } catch {
+      // Silencioso
+    } finally {
+      setDisparandoRafaga(false);
+    }
+  };
 
   // Canal WebSocket Global para Alertas de Pánico SOS en Tiempo Real
   useEffect((): (() => void) | undefined => {
@@ -345,7 +430,7 @@ export function App(): ReactElement {
                     SENTINEL <span className="text-emerald-400">//</span> OPS
                   </h1>
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-400 block">
-                    Enterprise V2.0 • Colombia
+                    Enterprise V5.0 • Colombia
                   </span>
                 </div>
               </div>
@@ -594,6 +679,54 @@ export function App(): ReactElement {
                   <span>Despacho CAD & GPS Radar</span>
                 </NavLink>
               )}
+
+              {/* Nuevos Módulos Enterprise V5.0 */}
+              <div className="pt-2 mt-2 border-t border-white/10 space-y-1.5">
+                <span className="px-3 text-[9px] font-mono uppercase tracking-widest text-emerald-400/80 block">
+                  División Especial V5.0
+                </span>
+                <NavLink
+                  to="/operaciones-k9"
+                  className={({ isActive }): string =>
+                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                      isActive
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                >
+                  <Truck className="h-4 w-4 shrink-0" />
+                  <span>Escoltas BASC, K9 & Cercas</span>
+                </NavLink>
+
+                <NavLink
+                  to="/cumplimiento-sarlaft"
+                  className={({ isActive }): string =>
+                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                      isActive
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                >
+                  <FileCheck2 className="h-4 w-4 shrink-0" />
+                  <span>SARLAFT 2.0, SG-SST & Kevlar</span>
+                </NavLink>
+
+                <NavLink
+                  to="/inteligencia-forense"
+                  className={({ isActive }): string =>
+                    `boton-tactico-campo flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition ${
+                      isActive
+                        ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    }`
+                  }
+                >
+                  <BrainCircuit className="h-4 w-4 shrink-0" />
+                  <span>Inteligencia IA & Lab Forense</span>
+                </NavLink>
+              </div>
             </nav>
           </div>
 
@@ -667,36 +800,124 @@ export function App(): ReactElement {
         {/* ÁREA DE CONTENIDO PRINCIPAL, BANNER SOS Y HEADER SUPERIOR          */}
         {/* ================================================================= */}
         <div className="flex-1 flex flex-col min-w-0 min-h-screen">
-          {/* Header Superior con Selector de Modo Táctico de Campo (Alto Contraste) */}
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/80 backdrop-blur-xl px-8 py-3.5 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs font-semibold text-slate-300">
-                {datosEstado?.estado ?? "Sentinel Core En Línea"}
-              </span>
-              <span className="text-slate-600">•</span>
-              <span className="text-xs text-slate-400 font-mono">
-                Ley 2101:{" "}
-                {datosEstado?.tope_horas_semanales_ley_2101 ?? 42}h/sem
-              </span>
+          {/* Header Superior con Controles V4.0 de Simulación Viva, Ráfaga Operativa y Auditoría Blockchain */}
+          <header className="sticky top-0 z-30 border-b border-white/10 bg-slate-950/90 backdrop-blur-xl px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-semibold text-slate-300">
+                  {datosEstado?.estado ?? "Sentinel Core V4.0"}
+                </span>
+              </div>
+
+              <span className="text-slate-700">|</span>
+
+              {/* Indicador en vivo de Integridad Blockchain SHA-256 */}
+              <div
+                title="Verificación en caliente de bloques encadenados SHA-256 (Minuta, Relevos y Kardex Balístico)"
+                className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-mono font-bold transition-all ${
+                  kpisTiempoReal?.integridad_blockchain
+                    ?.INTEGRIDAD_VERIFICADA !== false
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+                    : "border-rose-500 bg-rose-600/30 text-rose-200 animate-pulse shadow-lg shadow-rose-900/50"
+                }`}
+              >
+                {kpisTiempoReal?.integridad_blockchain
+                  ?.INTEGRIDAD_VERIFICADA !== false ? (
+                  <Lock className="h-3.5 w-3.5 text-emerald-400" />
+                ) : (
+                  <ShieldAlert className="h-3.5 w-3.5 text-rose-400" />
+                )}
+                <span>
+                  {kpisTiempoReal?.integridad_blockchain
+                    ?.INTEGRIDAD_VERIFICADA !== false
+                    ? `Integridad Blockchain SHA-256: ${
+                        kpisTiempoReal?.integridad_blockchain
+                          ?.total_bloques_auditados ?? 44
+                      } Bloques Verificados`
+                    : `CADENA CORRUPTA DETECTADA EN BLOQUE #${
+                        kpisTiempoReal?.integridad_blockchain
+                          ?.bloque_corrupto_id ?? 1
+                      }`}
+                </span>
+              </div>
+
+              {/* Contador de Conexiones WebSocket Activas */}
+              <div className="flex items-center gap-1.5 rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-[11px] font-mono text-cyan-300">
+                <Radio className="h-3.5 w-3.5 text-cyan-400 animate-pulse" />
+                <span>
+                  WS Activos:{" "}
+                  {Math.max(
+                    1,
+                    kpisTiempoReal?.conexiones_websocket_activas ??
+                      datosEstado?.conexiones_websocket_activas ??
+                      1
+                  )}
+                </span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {usuarioActual.rol !== "CLIENTE" && (
+                <>
+                  {/* Interruptor MODO SIMULACIÓN EN VIVO (TELEMETRÍA ACTIVA) */}
+                  <button
+                    type="button"
+                    onClick={(): void => {
+                      void manejarAlternarSimulacionViva();
+                    }}
+                    className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-[11px] font-black uppercase tracking-wider transition ${
+                      simulacionVivaActiva
+                        ? "border-cyan-400 bg-cyan-500/20 text-cyan-200 shadow-lg shadow-cyan-500/20"
+                        : "border-white/15 bg-white/5 text-slate-300 hover:border-cyan-400/50 hover:text-cyan-300"
+                    }`}
+                  >
+                    <Activity
+                      className={`h-3.5 w-3.5 ${
+                        simulacionVivaActiva
+                          ? "text-cyan-300 animate-spin"
+                          : "text-slate-400"
+                      }`}
+                    />
+                    <span>
+                      {simulacionVivaActiva
+                        ? "MODO SIMULACIÓN EN VIVO (TELEMETRÍA ACTIVA)"
+                        : "Modo Simulación en Vivo (Inactivo)"}
+                    </span>
+                  </button>
+
+                  {/* Botón ⚡ Disparar Ráfaga Operativa */}
+                  <button
+                    type="button"
+                    disabled={disparandoRafaga}
+                    onClick={(): void => {
+                      void manejarDispararRafaga();
+                    }}
+                    className="flex items-center gap-1.5 rounded-xl border border-emerald-400/50 bg-emerald-500 px-3 py-1.5 text-xs font-black text-slate-950 shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition disabled:opacity-50"
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                    <span>
+                      {disparandoRafaga
+                        ? "Inyectando Ráfaga..."
+                        : "⚡ Disparar Ráfaga Operativa"}
+                    </span>
+                  </button>
+                </>
+              )}
+
               {/* Toggle Modo Centro de Mando vs Modo Táctico de Campo (Sunlight Ready) */}
               <button
                 type="button"
                 onClick={alternarModoTactico}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold transition ${
+                className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-bold transition ${
                   modoTacticoAltoContraste
                     ? "border-amber-400 bg-amber-400 text-black shadow-lg shadow-amber-500/30"
                     : "border-white/15 bg-white/5 text-slate-200 hover:border-amber-400/50 hover:text-amber-300"
                 }`}
               >
-                <Sun className="h-4 w-4" />
+                <Sun className="h-3.5 w-3.5" />
                 <span>
-                  {modoTacticoAltoContraste
-                    ? "MODO TÁCTICO DE CAMPO (ALTO CONTRASTE)"
-                    : "Modo Centro de Mando"}
+                  {modoTacticoAltoContraste ? "ALTO CONTRASTE" : "Modo Campo"}
                 </span>
               </button>
 
@@ -705,6 +926,7 @@ export function App(): ReactElement {
                 onClick={(): void => {
                   void verificarNucleo();
                   void cargarAlertasSosPendientes();
+                  void cargarKpisHeader();
                 }}
                 title="Sincronizar telemetría del servidor"
                 className="rounded-lg border border-white/10 bg-white/5 p-1.5 text-slate-300 hover:border-emerald-500/40 hover:text-emerald-300 transition"
@@ -716,13 +938,46 @@ export function App(): ReactElement {
                 />
               </button>
 
-              <div className="h-4 w-[1px] bg-white/10" />
-
               <span className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-bold text-emerald-300">
                 {usuarioActual.rol}
               </span>
             </div>
           </header>
+
+          {/* Notificación compacta de última Ráfaga Operativa inyectada */}
+          {ultimaRafaga && (
+            <div className="border-b border-emerald-500/30 bg-emerald-950/60 px-6 py-2 text-xs flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-3 text-emerald-200">
+                <span className="rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-black text-slate-950 uppercase">
+                  Ráfaga #{ultimaRafaga.rafaga_numero} Inyectada
+                </span>
+                <span>
+                  <strong>Sede:</strong> {ultimaRafaga.puesto_afectado} —{" "}
+                  {ultimaRafaga.nombre_puesto}
+                </span>
+                <span>•</span>
+                <span>
+                  <strong>Garita LPR:</strong>{" "}
+                  {ultimaRafaga.acceso_garita_creado}
+                </span>
+                <span>•</span>
+                <span>
+                  <strong>Ronda QR:</strong> {ultimaRafaga.ronda_qr_verificada}
+                </span>
+                <span>•</span>
+                <span className="font-mono text-[11px] text-emerald-300">
+                  SHA-256: {ultimaRafaga.sello_sha256_generado.slice(0, 16)}...
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={(): void => setUltimaRafaga(null)}
+                className="text-[11px] text-emerald-300 hover:text-white underline"
+              >
+                Ocultar
+              </button>
+            </div>
+          )}
 
           {/* =============================================================== */}
           {/* BANNER ROJO PULSANTE GLOBAL DE ALERTA DE PÁNICO SOS (3.2)        */}
@@ -858,6 +1113,18 @@ export function App(): ReactElement {
               <Route
                 path="/despacho-cad"
                 element={<ModuloDespachoCAD />}
+              />
+              <Route
+                path="/operaciones-k9"
+                element={<OperacionesEspecialesK9 />}
+              />
+              <Route
+                path="/cumplimiento-sarlaft"
+                element={<CumplimientoSarlaftSST />}
+              />
+              <Route
+                path="/inteligencia-forense"
+                element={<InteligenciaForenseIA />}
               />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

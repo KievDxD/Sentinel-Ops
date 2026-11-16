@@ -33,16 +33,43 @@ export function ModuloDespachoCAD(): React.ReactElement {
   );
   const [informeCierre, setInformeCierre] = useState<string>("");
   const [redApoyo, setRedApoyo] = useState<InfoRedApoyoPonal | null>(null);
+  const [puestoObjetivoRadarId, setPuestoObjetivoRadarId] = useState<number>(1);
   const [procesando, setProcesando] = useState<boolean>(false);
   const [mensaje, setMensaje] = useState<{
     tipo: "exito" | "error";
     texto: string;
   } | null>(null);
 
+  function calcularDistanciaHaversineKm(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number {
+    const r = 6371.0;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180.0;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180.0;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180.0) *
+        Math.cos((lat2 * Math.PI) / 180.0) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Number((r * c).toFixed(2));
+  }
+
   useEffect(() => {
     cargarDatosCAD();
-    const intervalo = setInterval(cargarDatosCAD, 10000); // Polling cada 10s para el mapa
-    return () => clearInterval(intervalo);
+    const intervalo = setInterval(cargarDatosCAD, 6000);
+    const alDispararRafaga = () => {
+      cargarDatosCAD();
+    };
+    window.addEventListener("sentinel:rafaga-operativa", alDispararRafaga);
+    return () => {
+      clearInterval(intervalo);
+      window.removeEventListener("sentinel:rafaga-operativa", alDispararRafaga);
+    };
   }, []);
 
   async function cargarDatosCAD() {
@@ -202,108 +229,149 @@ export function ModuloDespachoCAD(): React.ReactElement {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Radar Cartográfico Satelital (7 columnas) */}
         <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+          <div className="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-sky-400" />
-              Mapa Táctico de Jurisdicción (Bogotá / Medellín)
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping" />
+              Radar GPS Dinámico: Bogotá D.C. & Corredor Sabana de Occidente
             </h3>
-            <span className="text-xs font-mono text-slate-400">
-              {telemetria?.puestos.length ?? 0} Puestos • {telemetria?.supervisores.length ?? 0} Patrullas
+            <span className="text-xs font-mono text-emerald-400 font-bold">
+              {telemetria?.puestos.length ?? 0} Puestos •{" "}
+              {telemetria?.supervisores.length ?? 0} Patrullas CAD
             </span>
           </div>
 
-          {/* Lienzo del Radar Táctico */}
-          <div className="relative h-96 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-4">
+          {/* Lienzo del Radar Táctico Multisede (6 Puestos + 4 Patrullas) */}
+          <div className="relative min-h-[410px] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col justify-between p-4 gap-4">
             {/* Cuadrícula táctica de fondo */}
             <div
               className="absolute inset-0 opacity-15"
               style={{
                 backgroundImage:
                   "radial-gradient(#10b981 1px, transparent 1px), radial-gradient(#10b981 1px, #020617 1px)",
-                backgroundSize: "30px 30px",
-                backgroundPosition: "0 0, 15px 15px",
+                backgroundSize: "28px 28px",
+                backgroundPosition: "0 0, 14px 14px",
               }}
             />
 
             {/* Círculos concéntricos de radar */}
-            <div className="absolute w-72 h-72 border border-emerald-500/20 rounded-full pointer-events-none" />
-            <div className="absolute w-44 h-44 border border-emerald-500/20 rounded-full pointer-events-none" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 border border-emerald-500/20 rounded-full pointer-events-none" />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-emerald-500/20 rounded-full pointer-events-none" />
 
-            {/* Puntos de Vigilancia Representados */}
-            <div className="relative z-10 w-full h-full flex flex-col justify-around">
-              <div className="flex justify-between px-6">
-                {telemetria?.puestos.slice(0, 2).map((p) => (
-                  <div
-                    key={p.puesto_id}
-                    className={`p-2.5 rounded-lg border text-left shadow-lg backdrop-blur-md max-w-[200px] ${
-                      p.estado_seguridad === "ALERTA_SOS"
-                        ? "bg-rose-950/80 border-rose-500 text-rose-200 animate-pulse"
-                        : "bg-slate-900/90 border-slate-700 text-slate-200"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          p.estado_seguridad === "ALERTA_SOS"
-                            ? "bg-rose-400"
-                            : "bg-emerald-400"
-                        }`}
-                      />
-                      <span className="text-[10px] font-mono font-bold">
-                        {p.codigo_puesto}
+            {/* 6 Puestos Georreferenciados */}
+            <div className="relative z-10">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-400 block mb-2">
+                ● Puestos Tácticos Fijos Georreferenciados (Clic para calcular ETA):
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {telemetria?.puestos.map((p) => {
+                  const seleccionado = p.puesto_id === puestoObjetivoRadarId;
+                  return (
+                    <button
+                      type="button"
+                      key={p.puesto_id}
+                      onClick={() => setPuestoObjetivoRadarId(p.puesto_id)}
+                      className={`p-2.5 rounded-lg border text-left shadow-lg backdrop-blur-md transition ${
+                        p.estado_seguridad === "ALERTA_SOS"
+                          ? "bg-rose-950/90 border-rose-500 text-rose-200 animate-pulse"
+                          : seleccionado
+                            ? "bg-emerald-950/80 border-emerald-400 text-emerald-100"
+                            : "bg-slate-900/90 border-slate-700 text-slate-200 hover:border-emerald-500/50"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              p.estado_seguridad === "ALERTA_SOS"
+                                ? "bg-rose-400"
+                                : "bg-emerald-400"
+                            }`}
+                          />
+                          <span className="text-[10px] font-mono font-bold text-emerald-300">
+                            {p.codigo_puesto}
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-mono px-1 rounded bg-white/10">
+                          {p.requiere_armamento ? "ARMADO" : "CANINO"}
+                        </span>
+                      </div>
+                      <div className="text-xs font-bold truncate">
+                        {p.nombre_puesto}
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                        Lat {p.latitud_gps.toFixed(4)}, Lon{" "}
+                        {p.longitud_gps.toFixed(4)}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Patrullas Motorizadas en Tránsito con Distancia Haversine & ETA al Puesto Seleccionado */}
+            <div className="relative z-10 border-t border-slate-800/80 pt-3">
+              {(() => {
+                const puestoRef =
+                  telemetria?.puestos.find(
+                    (p) => p.puesto_id === puestoObjetivoRadarId
+                  ) ?? telemetria?.puestos[0];
+                return (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-sky-400">
+                        🏍️ Telemetría Viva de Patrullas Motorizadas CAD → Hacia{" "}
+                        <strong className="text-white">
+                          {puestoRef?.codigo_puesto ?? "PST-BOG-01"} (
+                          {puestoRef?.nombre_puesto ?? "Torre Financiera"})
+                        </strong>
                       </span>
                     </div>
-                    <div className="text-xs font-bold truncate">
-                      {p.nombre_puesto}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {telemetria?.supervisores.map((s) => {
+                        const distKm = puestoRef
+                          ? calcularDistanciaHaversineKm(
+                              puestoRef.latitud_gps,
+                              puestoRef.longitud_gps,
+                              s.latitud_actual,
+                              s.longitud_actual
+                            )
+                          : 2.4;
+                        const etaMin = Math.max(
+                          1.5,
+                          Number((distKm * 1.5).toFixed(1))
+                        );
+                        return (
+                          <div
+                            key={s.supervisor_id}
+                            className="p-2.5 bg-sky-950/75 border border-sky-500/40 rounded-lg text-left shadow-lg text-sky-100 flex flex-col justify-between"
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className="text-[11px] font-mono font-bold text-sky-300">
+                                🏍️ {s.codigo_placa}
+                              </span>
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 bg-sky-500/20 rounded text-sky-300">
+                                {s.estado_disponibilidad}
+                              </span>
+                            </div>
+                            <div className="text-xs font-bold truncate">
+                              {s.nombre_supervisor}
+                            </div>
+                            <div className="mt-1.5 flex items-center justify-between text-[10px] font-mono text-slate-300 border-t border-sky-500/20 pt-1">
+                              <span>
+                                GPS: {s.latitud_actual.toFixed(4)},{" "}
+                                {s.longitud_actual.toFixed(4)}
+                              </span>
+                              <span className="text-emerald-300 font-bold">
+                                {distKm} km • ETA {etaMin} min
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                      GPS: {p.latitud_gps.toFixed(3)}, {p.longitud_gps.toFixed(3)}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Patrullas Motorizadas en Tránsito */}
-              <div className="flex justify-center gap-6">
-                {telemetria?.supervisores.map((s) => (
-                  <div
-                    key={s.supervisor_id}
-                    className="p-2.5 bg-sky-950/80 border border-sky-500/50 rounded-lg text-left shadow-lg text-sky-200 max-w-[180px]"
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="text-xs">🏍️</span>
-                      <span className="text-[10px] font-mono font-bold text-sky-400">
-                        {s.codigo_placa}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold truncate">
-                      {s.nombre_supervisor}
-                    </div>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 bg-sky-500/20 rounded text-sky-300">
-                      {s.estado_disponibilidad}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end px-12">
-                {telemetria?.puestos.slice(2).map((p) => (
-                  <div
-                    key={p.puesto_id}
-                    className="p-2.5 rounded-lg border bg-slate-900/90 border-slate-700 text-slate-200 max-w-[200px]"
-                  >
-                    <div className="flex items-center gap-1.5 mb-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="text-[10px] font-mono font-bold">
-                        {p.codigo_puesto}
-                      </span>
-                    </div>
-                    <div className="text-xs font-bold truncate">
-                      {p.nombre_puesto}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>

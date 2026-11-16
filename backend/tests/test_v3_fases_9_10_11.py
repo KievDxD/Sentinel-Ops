@@ -211,3 +211,624 @@ def test_habeas_data_enmascaramiento_y_formulario():
     )
     assert solicitud.autoriza_tratamiento_datos is True
 
+
+class _AdaptadorSesionAsincrona:
+    """Adaptador ligero sobre Session síncrona de SQLite en memoria para pruebas deterministas."""
+
+    def __init__(self, sesion_sync):
+        self._sesion = sesion_sync
+
+    async def execute(self, sentencia):
+        return self._sesion.execute(sentencia)
+
+    def add(self, instancia):
+        self._sesion.add(instancia)
+
+    def add_all(self, instancias):
+        self._sesion.add_all(instancias)
+
+    async def flush(self):
+        self._sesion.flush()
+
+    async def commit(self):
+        self._sesion.commit()
+
+    async def refresh(self, instancia):
+        self._sesion.refresh(instancia)
+
+    def close(self):
+        self._sesion.close()
+
+
+def _ejecutar_coro_directo(coro):
+    """Ejecuta una corrutina determinista en memoria sin instanciar ProactorEventLoop/socketpair."""
+    try:
+        while True:
+            coro.send(None)
+    except StopIteration as exc:
+        return exc.value
+
+
+def _crear_sesion_memoria_sembrada():
+    """Inicializa una BD SQLite en memoria y ejecuta el seeder V4.0."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from app.nucleo.base_datos import BaseModeloDeclarativo
+    from app.servicios.semilla import inicializar_datos_semilla
+
+    motor_sync = create_engine("sqlite:///:memory:", echo=False)
+    BaseModeloDeclarativo.metadata.create_all(bind=motor_sync)
+    FabricaSync = sessionmaker(bind=motor_sync, expire_on_commit=False)
+    sesion_sync = FabricaSync()
+    sesion_async = _AdaptadorSesionAsincrona(sesion_sync)
+    _ejecutar_coro_directo(inicializar_datos_semilla(sesion_async))
+    return sesion_async, motor_sync
+
+
+def test_seeder_multisede_bogota_sabana_integridad_completa():
+    """Valida que el seeder V4.0 cree los 6 puestos tácticos, 32 usuarios, escuadrones 2x2 y cadenas SHA-256."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import (
+        ModeloActaRelevoPuesto,
+        ModeloKardexBalistico,
+        ModeloPrefactura,
+        ModeloPuestoVigilancia,
+        ModeloRegistroAccesoGarita,
+        ModeloRegistroMinuta,
+        ModeloUsuario,
+    )
+    from app.servicios.simulador_operativo import auditar_integridad_blockchain_sha256
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        puestos = sesion._sesion.execute(select(ModeloPuestoVigilancia)).scalars().all()
+        codigos_puestos = {p.codigo_puesto for p in puestos}
+        assert len(puestos) == 6
+        assert {
+            "PST-BOG-01",
+            "PST-OCC-02",
+            "PST-BOG-03",
+            "PST-FAC-04",
+            "PST-BOG-05",
+            "PST-BOG-06",
+        }.issubset(codigos_puestos)
+
+        usuarios = sesion._sesion.execute(select(ModeloUsuario)).scalars().all()
+        assert len(usuarios) >= 31
+
+        minutas = sesion._sesion.execute(select(ModeloRegistroMinuta)).scalars().all()
+        assert len(minutas) >= 25
+
+        relevos = sesion._sesion.execute(select(ModeloActaRelevoPuesto)).scalars().all()
+        assert len(relevos) >= 6
+
+        kardex = sesion._sesion.execute(select(ModeloKardexBalistico)).scalars().all()
+        assert len(kardex) >= 12
+
+        accesos = sesion._sesion.execute(select(ModeloRegistroAccesoGarita)).scalars().all()
+        assert len(accesos) == 32
+
+        prefacturas = sesion._sesion.execute(select(ModeloPrefactura)).scalars().all()
+        assert len(prefacturas) == 4
+
+        auditoria = _ejecutar_coro_directo(auditar_integridad_blockchain_sha256(sesion))  # type: ignore[arg-type]
+        assert auditoria["INTEGRIDAD_VERIFICADA"] is True
+        assert auditoria["bloques_corruptos"] == 0
+        assert auditoria["total_bloques_auditados"] == len(minutas) + len(relevos) + len(kardex)
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_simulador_rafaga_operativa_mantiene_integridad_sha256():
+    """Valida que al disparar una ráfaga operativa en vivo se encadenen bloques SHA-256 sin corrupción."""
+    from app.servicios.simulador_operativo import (
+        auditar_integridad_blockchain_sha256,
+        ejecutar_rafaga_operativa,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        auditoria_inicial = _ejecutar_coro_directo(auditar_integridad_blockchain_sha256(sesion))  # type: ignore[arg-type]
+        bloques_iniciales = auditoria_inicial["total_bloques_auditados"]
+
+        resultado_rafaga = _ejecutar_coro_directo(ejecutar_rafaga_operativa(sesion))  # type: ignore[arg-type]
+        assert resultado_rafaga["rafaga_numero"] >= 1
+        assert len(resultado_rafaga["sello_sha256_generado"]) == 64
+        assert resultado_rafaga["integridad_blockchain_verificada"] is True
+        assert resultado_rafaga["total_bloques_cadena"] == bloques_iniciales + 1
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_kpis_tiempo_real_calculo_sla_y_auditoria_bloques():
+    """Valida el cálculo de KPIs ejecutivos en vivo (SLA por puesto, nómina Ley 2101, reacción CAD e integridad)."""
+    from app.servicios.simulador_operativo import calcular_kpis_tiempo_real
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        kpis = _ejecutar_coro_directo(calcular_kpis_tiempo_real(sesion))  # type: ignore[arg-type]
+
+        assert kpis["porcentaje_sla_global"] > 0
+        assert len(kpis["sla_por_puesto"]) == 6
+        assert kpis["costo_nomina_acumulado_cop"] > 0
+        assert kpis["horas_extras_totales"] > 0
+        assert kpis["tiempo_promedio_reaccion_sos_segundos"] > 0
+        assert kpis["integridad_blockchain"]["INTEGRIDAD_VERIFICADA"] is True
+        assert kpis["ocupacion_perimetral_total"] == 12
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_alternar_modo_simulacion_viva_y_telemetria_patrullas():
+    """Valida el encendido/apagado del motor de simulación viva y el avance de coordenadas GPS de patrullas."""
+    from app.servicios.semilla import COORDENADAS_PUESTOS_V4
+    from app.servicios.simulador_operativo import gestor_simulacion
+
+    assert len(COORDENADAS_PUESTOS_V4) == 6
+    coord_antes = gestor_simulacion.obtener_coordenadas_supervisor("SUP-101")
+    gestor_simulacion.avanzar_telemetria()
+    coord_despues = gestor_simulacion.obtener_coordenadas_supervisor("SUP-101")
+    assert coord_antes != coord_despues
+
+    activa_on = gestor_simulacion.alternar_modo_simulacion(activar=True)
+    assert activa_on is True
+    activa_off = gestor_simulacion.alternar_modo_simulacion(activar=False)
+    assert activa_off is False
+
+
+def test_coordenadas_georreferenciadas_6_puestos_bogota_sabana():
+    """Verifica que las coordenadas de los 6 puestos correspondan a Bogotá y Sabana de Occidente."""
+    from app.servicios.semilla import COORDENADAS_PUESTOS_V4
+
+    codigos_esperados = [
+        "PST-BOG-01",
+        "PST-OCC-02",
+        "PST-BOG-03",
+        "PST-FAC-04",
+        "PST-BOG-05",
+        "PST-BOG-06",
+    ]
+    for cod in codigos_esperados:
+        assert cod in COORDENADAS_PUESTOS_V4
+        lat, lon, radio_m = COORDENADAS_PUESTOS_V4[cod]
+        assert 4.50 <= lat <= 4.90
+        assert -74.45 <= lon <= -74.00
+        assert radio_m >= 50.0
+
+
+def test_credenciales_vencidas_y_por_vencer_en_seeder_v4():
+    """Verifica que el seeder incluya guardas con credencial VIGENTE, POR_VENCER y 2 con VENCIDA."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        hoy = date.today()
+        operadores = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.OPERADOR)
+            )
+            .scalars()
+            .all()
+        )
+
+        vencidas = [
+            op for op in operadores
+            if op.fecha_vencimiento_credencial and op.fecha_vencimiento_credencial < hoy
+        ]
+        por_vencer = [
+            op for op in operadores
+            if op.fecha_vencimiento_credencial and 0 <= (op.fecha_vencimiento_credencial - hoy).days <= 30
+        ]
+        vigentes = [
+            op for op in operadores
+            if op.fecha_vencimiento_credencial and (op.fecha_vencimiento_credencial - hoy).days > 30
+        ]
+
+        assert len(vencidas) == 2
+        assert len(por_vencer) == 6
+        assert len(vigentes) == 16
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+# ============================================================================
+# FASE 12 (RELEASE ENTERPRISE V5.0): OPERACIONES ESPECIALES, K9, SARLAFT,
+# SG-SST DECRETO 1072, HOMBRE CAÍDO & LABORATORIO FORENSE SHA-256
+# ============================================================================
+
+
+def test_creacion_y_verificacion_corredor_escolta_basc():
+    """Valida el registro de escoltas BASC, cálculo Haversine, sello SHA-256 y alerta por desvío."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+    from app.rutas.rutas_operaciones_especiales import (
+        SolicitudCrearEscoltaBasc,
+        SolicitudVerificarCorredorEscolta,
+        crear_mision_escolta,
+        listar_misiones_escolta,
+        verificar_corredor_escolta,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+        assert admin is not None
+
+        misiones_semilla = _ejecutar_coro_directo(listar_misiones_escolta(sesion, admin))  # type: ignore[arg-type]
+        assert len(misiones_semilla) >= 3
+
+        solicitud = SolicitudCrearEscoltaBasc(
+            tipo_mision="CONVOY_CARGA_CRITICA_BASC",
+            descripcion_ruta="Convoy Siberia -> Puerto Seco Facatativá",
+            corredor_vial="Autopista Medellín Calle 80 -> Sabana Occidente",
+            vehiculo_placa="TRK-991 (Blindado Nivel IV)",
+            nivel_blindaje="NIVEL_IV",
+            serial_arma_indumil="IM-9MM-301988",
+            lat_origen=4.7390,
+            lon_origen=-74.1280,
+            lat_destino=4.8143,
+            lon_destino=-74.3547,
+            umbral_desvio_metros=200.0,
+        )
+        nueva = _ejecutar_coro_directo(crear_mision_escolta(solicitud, sesion, admin))  # type: ignore[arg-type]
+        assert nueva["distancia_ruta_km"] > 10.0
+        assert len(nueva["sello_manifiesto_sha256"]) == 64
+
+        verif_desvio = _ejecutar_coro_directo(
+            verificar_corredor_escolta(
+                nueva["mision_id"],
+                SolicitudVerificarCorredorEscolta(
+                    lat_actual=4.6100,
+                    lon_actual=-74.2200,
+                    desviacion_reportada_metros=640.0,
+                ),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert verif_desvio["alerta_desvio_disparada"] is True
+        assert verif_desvio["estado_mision"] == "ALERTA_DESVIO_RUTA"
+        assert verif_desvio["registro_minuta_alerta_id"] is not None
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_control_fatiga_y_descanso_unidad_canina_k9():
+    """Valida el semáforo de fatiga K9 (tope 6h continuas) y el reinicio tras descanso en canil."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+    from app.rutas.rutas_operaciones_especiales import (
+        SolicitudDescansoCaninoK9,
+        listar_binomios_k9,
+        registrar_descanso_k9,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+        binomios = _ejecutar_coro_directo(listar_binomios_k9(sesion, admin))  # type: ignore[arg-type]
+        assert len(binomios) == 4
+        nombres = {b["nombre_canino"] for b in binomios}
+        assert {"Thor", "Athena", "Rex", "Sombra"} == nombres
+
+        sombra = next(b for b in binomios if b["nombre_canino"] == "Sombra")
+        assert sombra["horas_trabajadas_turno"] >= 5.5
+
+        descanso = _ejecutar_coro_directo(
+            registrar_descanso_k9(
+                sombra["k9_id"],
+                SolicitudDescansoCaninoK9(minutos_descanso_canil=60, hidratacion_verificada=True),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert descanso["horas_trabajadas_turno"] == 0.0
+        assert descanso["estado_fatiga"] == "APTO_OPERATIVO"
+        assert descanso["semaforo_normativo_k9"] == "VERDE_APTO_OPERATIVO"
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_monitoreo_medios_tecnologicos_y_cercas_por_puesto():
+    """Valida el estado operativo, latencia y voltaje en kV de los 18 dispositivos tecnológicos."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+    from app.rutas.rutas_operaciones_especiales import listar_medios_tecnologicos
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+        medios = _ejecutar_coro_directo(listar_medios_tecnologicos(None, sesion, admin))  # type: ignore[arg-type]
+        assert len(medios) == 18
+        cercas = [m for m in medios if m["tipo_dispositivo"] == "CERCA_ELECTRICA"]
+        assert len(cercas) >= 5
+        assert all(c["voltaje_cerca_kv"] >= 8.0 for c in cercas)
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_consulta_sarlaft_listas_restrictivas_y_certificado_sha256():
+    """Valida la emisión de certificados SARLAFT 2.0 (Limpio, PEP y Bloqueo OFAC/INTERPOL) con SHA-256."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+    from app.rutas.rutas_cumplimiento import (
+        SolicitudConsultaSarlaft,
+        consultar_listas_sarlaft,
+        listar_historial_sarlaft,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+
+        limpio = _ejecutar_coro_directo(
+            consultar_listas_sarlaft(
+                SolicitudConsultaSarlaft(
+                    documento="1032445901",
+                    nombre_completo="Camilo Andrés Fajardo",
+                    tipo_tercero="ASPIRANTE_GUARDA",
+                ),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert limpio["nivel_riesgo"] == "SIN_COINCIDENCIAS"
+        assert limpio["apto_contratacion_ingreso"] is True
+        assert len(limpio["sello_auditoria_sha256"]) == 64
+
+        pep = _ejecutar_coro_directo(
+            consultar_listas_sarlaft(
+                SolicitudConsultaSarlaft(
+                    documento="79884120",
+                    nombre_completo="Ex-Senador Rodrigo Villamizar PEP",
+                    tipo_tercero="CLIENTE_B2B",
+                ),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert pep["nivel_riesgo"] == "RIESGO_MEDIO_PEP"
+
+        bloqueado = _ejecutar_coro_directo(
+            consultar_listas_sarlaft(
+                SolicitudConsultaSarlaft(
+                    documento="80666999",
+                    nombre_completo="Inversiones Fantasma OFAC Ltda",
+                    tipo_tercero="VISITANTE_CRITICO",
+                ),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert bloqueado["nivel_riesgo"] == "BLOQUEO_LISTA_RESTRICTIVA"
+        assert bloqueado["apto_contratacion_ingreso"] is False
+        assert "OFAC_SDN_CLINTON" in bloqueado["listas_coincidentes"]
+
+        historial = _ejecutar_coro_directo(listar_historial_sarlaft(sesion, admin))  # type: ignore[arg-type]
+        assert len(historial) >= 13
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_sst_check_aptitud_psicofisica_y_semaforo_kevlar():
+    """Valida el bloqueo SG-SST Decreto 1072 cuando el guarda reporta < 5h de sueño y el semáforo Kevlar."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloPuestoVigilancia, ModeloUsuario, RolUsuario
+    from app.rutas.rutas_cumplimiento import (
+        SolicitudCheckAptitudSst,
+        consultar_semaforo_chalecos_kevlar,
+        registrar_check_aptitud_sst,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+        puesto = sesion._sesion.execute(select(ModeloPuestoVigilancia)).scalars().first()
+        assert puesto is not None
+
+        chalecos = _ejecutar_coro_directo(consultar_semaforo_chalecos_kevlar(sesion, admin))  # type: ignore[arg-type]
+        assert len(chalecos) == 6
+        assert any(c["semaforo_kevlar"] == "VENCIDO_REEMPLAZO_INMEDIATO" for c in chalecos)
+
+        check_fatiga = _ejecutar_coro_directo(
+            registrar_check_aptitud_sst(
+                SolicitudCheckAptitudSst(
+                    puesto_id=puesto.puesto_id,
+                    horas_sueno_reportadas=3.5,
+                    cero_alcohol_fatiga=True,
+                    chaleco_kevlar_verificado=True,
+                ),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert check_fatiga["apto_operacion"] is False
+        assert check_fatiga["alerta_sst_disparada"] is True
+        assert check_fatiga["estado_evaluacion"] == "BLOQUEO_FATIGA_O_EPP_DECRETO_1072"
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_alerta_hombre_caido_latido_supervivencia():
+    """Valida el temporizador Dead Man's Switch, confirmación de latido y disparo de pre-alerta SOS."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloPuestoVigilancia, ModeloUsuario, RolUsuario
+    from app.rutas.rutas_cumplimiento import (
+        SolicitudLatidoHombreCaido,
+        listar_monitores_hombre_caido,
+        registrar_latido_hombre_caido,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+        puesto = sesion._sesion.execute(select(ModeloPuestoVigilancia)).scalars().first()
+        assert puesto is not None
+
+        monitores = _ejecutar_coro_directo(listar_monitores_hombre_caido(sesion, admin))  # type: ignore[arg-type]
+        assert len(monitores) == 6
+
+        pulso_ok = _ejecutar_coro_directo(
+            registrar_latido_hombre_caido(
+                puesto.puesto_id,
+                SolicitudLatidoHombreCaido(simular_inactividad_critica=False),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert pulso_ok["estado_supervivencia"] == "ACTIVO_NORMAL"
+
+        pulso_alerta = _ejecutar_coro_directo(
+            registrar_latido_hombre_caido(
+                puesto.puesto_id,
+                SolicitudLatidoHombreCaido(simular_inactividad_critica=True),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        assert pulso_alerta["estado_supervivencia"] == "ALERTA_HOMBRE_CAIDO_SOS"
+        assert pulso_alerta["alertas_disparadas_turno"] >= 1
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_boletin_relevo_inteligencia_tactica_y_antifraude_rondas():
+    """Valida el generador de Boletín de Relevo IA por puesto y el auditor antifraude de rondas GPS."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+    from app.rutas.rutas_inteligencia import (
+        auditar_antifraude_rondas,
+        generar_boletin_relevo_ia,
+    )
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+
+        boletin = _ejecutar_coro_directo(
+            generar_boletin_relevo_ia("PST-BOG-03", sesion, admin)  # type: ignore[arg-type]
+        )
+        assert boletin["puesto_codigo"] == "PST-BOG-03"
+        assert boletin["nivel_amenaza"] in ("BAJO", "MODERADO", "ALTO", "CRITICO")
+        assert len(boletin["hallazgos_clave"]) >= 1
+        assert len(boletin["recomendaciones_tacticas"]) >= 2
+        assert len(boletin["sello_boletin_sha256"]) == 64
+
+        antifraude = _ejecutar_coro_directo(auditar_antifraude_rondas(sesion, admin))  # type: ignore[arg-type]
+        assert antifraude["total_marcaciones_auditadas"] > 0
+        assert antifraude["total_anomalias_detectadas"] >= 1
+        assert any(
+            a["tipo_anomalia"] == "VELOCIDAD_HUMANA_IMPOSIBLE" for a in antifraude["anomalias"]
+        )
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+def test_laboratorio_sabotaje_deteccion_y_autoreparacion_sha256():
+    """Valida el ciclo completo: Sabotaje de Minuta en BD -> Detección SHA-256 -> Auto-Reparación Forense."""
+    from sqlalchemy import select
+    from app.modelos.modelos_bd import ModeloUsuario, RolUsuario
+    from app.rutas.rutas_inteligencia import (
+        SolicitudSabotajeForense,
+        endpoint_reparar_cadena_forense,
+        endpoint_simular_sabotaje_forense,
+    )
+    from app.servicios.simulador_operativo import auditar_integridad_blockchain_sha256
+
+    sesion, motor = _crear_sesion_memoria_sembrada()
+    try:
+        admin = (
+            sesion._sesion.execute(
+                select(ModeloUsuario).where(ModeloUsuario.rol == RolUsuario.ADMINISTRADOR)
+            )
+            .scalars()
+            .first()
+        )
+
+        # 1. Simular ataque / adulteración en base de datos
+        sabotaje = _ejecutar_coro_directo(
+            endpoint_simular_sabotaje_forense(
+                SolicitudSabotajeForense(
+                    texto_adulterado="[ATAQUE SQL] Registro adulterado maliciosamente sin recalcular SHA-256."
+                ),
+                sesion,  # type: ignore[arg-type]
+                admin,
+            )
+        )
+        auditoria_rota = sabotaje["auditoria_resultante"]
+        assert auditoria_rota["INTEGRIDAD_VERIFICADA"] is False
+        assert auditoria_rota["bloques_corruptos"] >= 1
+        assert auditoria_rota["bloque_corrupto_id"] is not None
+        assert auditoria_rota["hash_esperado"] != auditoria_rota["hash_calculado"]
+
+        # 2. Ejecutar auto-reparación forense SHA-256 y verificar restauración al 100%
+        reparacion = _ejecutar_coro_directo(
+            endpoint_reparar_cadena_forense(sesion, admin)  # type: ignore[arg-type]
+        )
+        assert reparacion["registros_restaurados"] >= 1
+        assert reparacion["auditoria_post_reparacion"]["INTEGRIDAD_VERIFICADA"] is True
+        assert reparacion["auditoria_post_reparacion"]["bloques_corruptos"] == 0
+
+        auditoria_final = _ejecutar_coro_directo(auditar_integridad_blockchain_sha256(sesion))  # type: ignore[arg-type]
+        assert auditoria_final["INTEGRIDAD_VERIFICADA"] is True
+    finally:
+        sesion.close()
+        motor.dispose()
+
+
+
+

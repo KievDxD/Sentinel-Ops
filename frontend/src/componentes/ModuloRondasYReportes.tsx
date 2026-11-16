@@ -27,6 +27,7 @@ import {
   servicioAuditarCoberturaPuestos,
   servicioDescargarPrenominaCsv,
   servicioListarMarcacionesRonda,
+  servicioListarPuestos,
   servicioListarPuntosControl,
   servicioRegistrarMarcacionRonda,
   servicioSincronizarColaOffline,
@@ -35,6 +36,7 @@ import { usarAlmacenAutenticacion } from "../estado/almacen_autenticacion";
 import type {
   AlertaCoberturaPuesto,
   MarcacionRonda,
+  PuestoVigilancia,
   PuntoControlRonda,
   RegistrarMarcacionRondaFormulario,
 } from "../tipos/tipos_sistema";
@@ -62,6 +64,10 @@ export function ModuloRondasYReportes(): ReactElement {
   const puedeAbrirFolio =
     rol === "ADMINISTRADOR" || rol === "SUPERVISOR" || rol === "CLIENTE";
 
+  const [puestos, setPuestos] = useState<PuestoVigilancia[]>([]);
+  const [puestoFiltroId, setPuestoFiltroId] = useState<number | "TODOS">(
+    "TODOS"
+  );
   const [puntos, setPuntos] = useState<PuntoControlRonda[]>([]);
   const [marcaciones, setMarcaciones] = useState<MarcacionRonda[]>([]);
   const [alertasCobertura, setAlertasCobertura] = useState<
@@ -89,11 +95,14 @@ export function ModuloRondasYReportes(): ReactElement {
 
   const cargarTodo = useCallback(async (): Promise<void> => {
     try {
-      const [listaPuntos, listaMarcaciones, listaAlertas] = await Promise.all([
-        servicioListarPuntosControl(),
-        servicioListarMarcacionesRonda(),
-        servicioAuditarCoberturaPuestos(),
-      ]);
+      const [listaPuestos, listaPuntos, listaMarcaciones, listaAlertas] =
+        await Promise.all([
+          servicioListarPuestos(),
+          servicioListarPuntosControl(),
+          servicioListarMarcacionesRonda(),
+          servicioAuditarCoberturaPuestos(),
+        ]);
+      setPuestos(listaPuestos);
       setPuntos(listaPuntos);
       setMarcaciones(listaMarcaciones);
       setAlertasCobertura(
@@ -108,8 +117,15 @@ export function ModuloRondasYReportes(): ReactElement {
     }
   }, [esCliente, usuarioActual?.puesto_base_id]);
 
-  useEffect((): void => {
+  useEffect((): (() => void) => {
     void cargarTodo();
+    const recargar = (): void => {
+      void cargarTodo();
+    };
+    window.addEventListener("sentinel:rafaga-operativa", recargar);
+    return (): void => {
+      window.removeEventListener("sentinel:rafaga-operativa", recargar);
+    };
   }, [cargarTodo]);
 
   useEffect((): (() => void) => {
@@ -137,6 +153,39 @@ export function ModuloRondasYReportes(): ReactElement {
       setValue("latitud_capturada", encontrado.latitud_gps);
       setValue("longitud_capturada", encontrado.longitud_gps);
     }
+  };
+
+  const simularMarcacionUnClic = async (
+    dentroDeGeocerca: boolean
+  ): Promise<void> => {
+    const puntosCandidatos =
+      puestoFiltroId === "TODOS"
+        ? puntos
+        : puntos.filter((p) => p.puesto_id === puestoFiltroId);
+    const puntoObjetivo = puntosCandidatos[0] ?? puntos[0];
+    if (!puntoObjetivo) return;
+
+    const latSim = dentroDeGeocerca
+      ? Number((puntoObjetivo.latitud_gps + 0.00002).toFixed(6))
+      : Number((puntoObjetivo.latitud_gps + 0.0022).toFixed(6));
+    const lonSim = dentroDeGeocerca
+      ? Number((puntoObjetivo.longitud_gps - 0.00002).toFixed(6))
+      : Number((puntoObjetivo.longitud_gps - 0.0022).toFixed(6));
+
+    setValue("punto_id", puntoObjetivo.punto_id);
+    setValue("latitud_capturada", latSim);
+    setValue("longitud_capturada", lonSim);
+    const obs = dentroDeGeocerca
+      ? `Simulación V4.0: Verificación en geocerca (${puntoObjetivo.nombre_punto}) sin novedad.`
+      : `Simulación V4.0: Intento de marcación fuera de perímetro autorizado (${puntoObjetivo.nombre_punto}).`;
+    setValue("observacion_ronda", obs);
+
+    await procesarMarcacion({
+      punto_id: puntoObjetivo.punto_id,
+      latitud_capturada: latSim,
+      longitud_capturada: lonSim,
+      observacion_ronda: obs,
+    });
   };
 
   const procesarMarcacion = async (
@@ -299,15 +348,45 @@ export function ModuloRondasYReportes(): ReactElement {
 
       {!esOperador && (
         <section className="rounded-2xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur-xl">
-          <div className="flex items-center gap-2.5 border-b border-white/10 pb-4">
-            <ShieldAlert className="h-5 w-5 text-amber-400" />
-            <h2 className="text-lg font-bold text-white">
-              Auditoría SLA de Cobertura y Rondas QR/GPS (Fase 7)
-            </h2>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-2.5">
+              <ShieldAlert className="h-5 w-5 text-amber-400" />
+              <h2 className="text-lg font-bold text-white">
+                Auditoría SLA de Cobertura y Rondas QR/GPS (6 Sedes Bogotá & Sabana)
+              </h2>
+            </div>
+
+            {!esCliente && (
+              <select
+                value={puestoFiltroId}
+                onChange={(e): void =>
+                  setPuestoFiltroId(
+                    e.target.value === "TODOS"
+                      ? "TODOS"
+                      : Number(e.target.value)
+                  )
+                }
+                className="rounded-xl border border-white/15 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white"
+              >
+                <option value="TODOS">
+                  Todas las Sedes ({puestos.length} Puestos)
+                </option>
+                {puestos.map((p) => (
+                  <option key={p.puesto_id} value={p.puesto_id}>
+                    {p.codigo_puesto} — {p.nombre_puesto}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {alertasCobertura.map((alerta) => (
+            {alertasCobertura
+              .filter(
+                (a) =>
+                  puestoFiltroId === "TODOS" || a.puesto_id === puestoFiltroId
+              )
+              .map((alerta) => (
               <div
                 key={alerta.puesto_id}
                 className={`rounded-xl border p-4 ${
@@ -392,6 +471,60 @@ export function ModuloRondasYReportes(): ReactElement {
                 </button>
               </div>
             )}
+
+            {/* Presets de Simulación 1-Clic (Dentro vs Fuera de Geocerca Haversine) */}
+            <div className="mt-4 rounded-xl border border-cyan-500/30 bg-slate-950/90 p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-mono font-bold text-cyan-400 uppercase">
+                  ⚡ Simulador Haversine 1-Clic (6 Sedes)
+                </span>
+                <select
+                  value={puestoFiltroId}
+                  onChange={(e): void => {
+                    const val =
+                      e.target.value === "TODOS"
+                        ? "TODOS"
+                        : Number(e.target.value);
+                    setPuestoFiltroId(val);
+                    if (val !== "TODOS") {
+                      const pt = puntos.find((p) => p.puesto_id === val);
+                      if (pt) {
+                        setValue("punto_id", pt.punto_id);
+                        seleccionarCoordenadasDePunto(pt.punto_id);
+                      }
+                    }
+                  }}
+                  className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1 text-[11px] text-slate-200"
+                >
+                  <option value="TODOS">Sede Activa (Cualquiera)</option>
+                  {puestos.map((p) => (
+                    <option key={p.puesto_id} value={p.puesto_id}>
+                      {p.codigo_puesto} — {p.nombre_puesto}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={(): void => {
+                    void simularMarcacionUnClic(true);
+                  }}
+                  className="rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-3 py-2 text-[11px] font-bold text-emerald-300 hover:bg-emerald-500/25 transition text-left"
+                >
+                  ✅ 1-Clic: Dentro de Geocerca (Exitosa)
+                </button>
+                <button
+                  type="button"
+                  onClick={(): void => {
+                    void simularMarcacionUnClic(false);
+                  }}
+                  className="rounded-lg border border-rose-500/40 bg-rose-500/15 px-3 py-2 text-[11px] font-bold text-rose-300 hover:bg-rose-500/25 transition text-left"
+                >
+                  🚨 1-Clic: Violación Geocerca (Fuera Rango)
+                </button>
+              </div>
+            </div>
 
             <form
               onSubmit={(e): void => {

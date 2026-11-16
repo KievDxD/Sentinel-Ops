@@ -909,3 +909,293 @@ class ModeloDespachoPatrulla(BaseModeloDeclarativo):
     puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
         "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
     )
+
+
+# ============================================================================
+# RELEASE ENTERPRISE V5.0: OPERACIONES ESPECIALES, K9, SARLAFT Y SG-SST
+# ============================================================================
+
+
+class ModeloMisionEscoltaBasc(BaseModeloDeclarativo):
+    """
+    Tabla `misiones_escolta_basc` (V5.0): Escoltas VIP y Convoyes Críticos BASC / ISO 28000.
+    """
+
+    __tablename__ = "misiones_escolta_basc"
+
+    mision_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    codigo_mision: Mapped[str] = mapped_column(
+        String(40), unique=True, index=True, nullable=False
+    )
+    tipo_mision: Mapped[str] = mapped_column(
+        String(60), default="CONVOY_CARGA_CRITICA_BASC", nullable=False
+    )
+    descripcion_ruta: Mapped[str] = mapped_column(String(240), nullable=False)
+    corredor_vial: Mapped[str] = mapped_column(String(200), nullable=False)
+    vehiculo_placa: Mapped[str] = mapped_column(String(120), nullable=False)
+    nivel_blindaje: Mapped[str] = mapped_column(
+        String(25), default="NIVEL_IIIA", nullable=False
+    )
+    escolta_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    serial_arma_indumil: Mapped[str] = mapped_column(String(60), nullable=False)
+    lat_origen: Mapped[float] = mapped_column(Float, nullable=False)
+    lon_origen: Mapped[float] = mapped_column(Float, nullable=False)
+    lat_destino: Mapped[float] = mapped_column(Float, nullable=False)
+    lon_destino: Mapped[float] = mapped_column(Float, nullable=False)
+    lat_actual: Mapped[float] = mapped_column(Float, nullable=False)
+    lon_actual: Mapped[float] = mapped_column(Float, nullable=False)
+    distancia_ruta_km: Mapped[float] = mapped_column(Float, default=12.5, nullable=False)
+    desviacion_metros: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    umbral_desvio_metros: Mapped[float] = mapped_column(
+        Float, default=250.0, nullable=False
+    )
+    estado_mision: Mapped[str] = mapped_column(
+        String(40), default="EN_RUTA_ACTIVA", nullable=False
+    )
+    sello_manifiesto_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    hash_anterior_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
+    fecha_despacho: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+
+    escolta: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[escolta_id]
+    )
+
+
+class ModeloBinomioCaninoK9(BaseModeloDeclarativo):
+    """
+    Tabla `binomios_caninos_k9` (V5.0): Unidades Caninas Biodetectoras y Control de Fatiga (Máx. 6h).
+    """
+
+    __tablename__ = "binomios_caninos_k9"
+
+    k9_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    codigo_unidad_k9: Mapped[str] = mapped_column(
+        String(40), unique=True, index=True, nullable=False
+    )
+    nombre_canino: Mapped[str] = mapped_column(String(60), nullable=False)
+    raza: Mapped[str] = mapped_column(String(60), nullable=False)
+    especialidad: Mapped[str] = mapped_column(String(40), nullable=False)
+    codigo_microchip: Mapped[str] = mapped_column(
+        String(40), unique=True, index=True, nullable=False
+    )
+    guia_operador_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
+    )
+    vacunacion_vigente: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    fecha_vencimiento_vacunas: Mapped[date] = mapped_column(Date, nullable=False)
+    horas_trabajadas_turno: Mapped[float] = mapped_column(
+        Float, default=2.0, nullable=False
+    )
+    max_horas_continuas_norma: Mapped[float] = mapped_column(
+        Float, default=6.0, nullable=False
+    )
+    estado_fatiga: Mapped[str] = mapped_column(
+        String(40), default="APTO_OPERATIVO", nullable=False
+    )
+    ultimo_descanso_canil: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, nullable=False
+    )
+    observaciones_veterinarias: Mapped[str] = mapped_column(
+        Text, default="Certificación veterinaria ICA vigente.", nullable=False
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
+
+    guia: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[guia_operador_id]
+    )
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+
+
+class ModeloMedioTecnologico(BaseModeloDeclarativo):
+    """
+    Tabla `medios_tecnologicos_puesto` (V5.0): Telemetría de Cámaras LPR, Cercas Eléctricas, NVR y Drones.
+    """
+
+    __tablename__ = "medios_tecnologicos_puesto"
+
+    medio_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    codigo_dispositivo: Mapped[str] = mapped_column(
+        String(40), unique=True, index=True, nullable=False
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
+    )
+    tipo_dispositivo: Mapped[str] = mapped_column(String(45), nullable=False)
+    ubicacion_detalle: Mapped[str] = mapped_column(String(120), nullable=False)
+    estado_operativo: Mapped[str] = mapped_column(
+        String(30), default="ONLINE", nullable=False
+    )
+    latencia_ms: Mapped[int] = mapped_column(Integer, default=14, nullable=False)
+    voltaje_cerca_kv: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+    bateria_respaldo_pct: Mapped[int] = mapped_column(Integer, default=100, nullable=False)
+    ultima_telemetria: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, nullable=False
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
+
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+
+
+class ModeloCertificadoSarlaft(BaseModeloDeclarativo):
+    """
+    Tabla `certificados_sarlaft` (V5.0): Cruce de Listas Restrictivas (OFAC/ONU/INTERPOL/PONAL) con firma SHA-256.
+    """
+
+    __tablename__ = "certificados_sarlaft"
+
+    certificado_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    codigo_certificado: Mapped[str] = mapped_column(
+        String(45), unique=True, index=True, nullable=False
+    )
+    documento_consultado: Mapped[str] = mapped_column(
+        String(35), index=True, nullable=False
+    )
+    nombre_consultado: Mapped[str] = mapped_column(String(160), nullable=False)
+    tipo_tercero: Mapped[str] = mapped_column(String(40), nullable=False)
+    nivel_riesgo: Mapped[str] = mapped_column(
+        String(40), default="SIN_COINCIDENCIAS", nullable=False
+    )
+    listas_coincidentes: Mapped[str] = mapped_column(
+        String(200), default="NINGUNA", nullable=False
+    )
+    listas_evaluadas: Mapped[str] = mapped_column(String(240), nullable=False)
+    apto_contratacion_ingreso: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    detalle_validacion: Mapped[str] = mapped_column(Text, nullable=False)
+    consultado_por_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    sello_auditoria_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    hash_anterior_sha256: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
+    fecha_consulta: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+
+    consultado_por: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[consultado_por_id]
+    )
+
+
+class ModeloCheckAptitudSst(BaseModeloDeclarativo):
+    """
+    Tabla `checks_aptitud_sst` (V5.0): Verificación psicofísica pre-turno Decreto 1072 de 2015 / ARL Nivel V.
+    """
+
+    __tablename__ = "checks_aptitud_sst"
+
+    check_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    operador_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), index=True, nullable=False
+    )
+    horas_sueno_reportadas: Mapped[float] = mapped_column(
+        Float, default=7.5, nullable=False
+    )
+    cero_alcohol_fatiga: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    chaleco_kevlar_verificado: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    serial_chaleco_asignado: Mapped[str] = mapped_column(
+        String(60), default="KEV-IIIA-2024-01", nullable=False
+    )
+    fecha_fabricacion_chaleco: Mapped[date] = mapped_column(Date, nullable=False)
+    apto_operacion: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    estado_evaluacion: Mapped[str] = mapped_column(
+        String(50), default="APTO_OPERATIVO", nullable=False
+    )
+    observaciones_sst: Mapped[str] = mapped_column(Text, nullable=False)
+    sello_sst_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
+    fecha_check: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, index=True, nullable=False
+    )
+
+    operador: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[operador_id]
+    )
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+
+
+class ModeloMonitoreoHombreCaido(BaseModeloDeclarativo):
+    """
+    Tabla `monitoreo_hombre_caido` (V5.0): Temporizador de supervivencia (Dead Man's Switch) en puestos críticos.
+    """
+
+    __tablename__ = "monitoreo_hombre_caido"
+
+    monitoreo_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, index=True, autoincrement=True
+    )
+    puesto_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("puestos_vigilancia.puesto_id"), unique=True, index=True, nullable=False
+    )
+    operador_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("usuarios.usuario_id"), index=True, nullable=False
+    )
+    intervalo_esperado_min: Mapped[int] = mapped_column(
+        Integer, default=15, nullable=False
+    )
+    ultimo_latido_utc: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=obtener_hora_utc, nullable=False
+    )
+    estado_supervivencia: Mapped[str] = mapped_column(
+        String(40), default="ACTIVO_NORMAL", nullable=False
+    )
+    latidos_consecutivos_exitosos: Mapped[int] = mapped_column(
+        Integer, default=20, nullable=False
+    )
+    alertas_disparadas_turno: Mapped[int] = mapped_column(
+        Integer, default=0, nullable=False
+    )
+    tenant_id: Mapped[str] = mapped_column(
+        String(60), default="EMPRESA-SEGURIDAD-COLOMBIA-01", index=True, nullable=False
+    )
+
+    puesto_vigilancia: Mapped["ModeloPuestoVigilancia"] = relationship(
+        "ModeloPuestoVigilancia", foreign_keys=[puesto_id]
+    )
+    operador: Mapped["ModeloUsuario"] = relationship(
+        "ModeloUsuario", foreign_keys=[operador_id]
+    )
+
+

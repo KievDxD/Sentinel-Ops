@@ -57,6 +57,22 @@ import type {
   RespuestaEscanearPlaca,
   InfoRedApoyoPonal,
   RespuestaImportacionUsuariosCsv,
+  KpisTiempoReal,
+  ResultadoRafagaOperativa,
+  EstadoSimulacionViva,
+  MisionEscoltaBasc,
+  SolicitudCrearEscoltaBasc,
+  RespuestaVerificarCorredorEscolta,
+  BinomioCaninoK9,
+  MedioTecnologicoPuesto,
+  CertificadoSarlaft,
+  SemaforoChalecoKevlar,
+  RespuestaCheckAptitudSst,
+  MonitorHombreCaido,
+  BoletinRelevoIA,
+  AuditoriaAntifraudeRondas,
+  RespuestaSabotajeForense,
+  RespuestaReparacionForense,
   TurnoOperativo,
   UsuarioSistema,
 } from "../tipos/tipos_sistema";
@@ -722,3 +738,224 @@ export async function servicioObtenerRedApoyoPonal(): Promise<InfoRedApoyoPonal>
   );
   return respuesta.data;
 }
+
+// ============================================================================
+// RELEASE V4.0: SIMULACIÓN VIVA, RÁFAGA OPERATIVA Y KPIS TIEMPO REAL
+// ============================================================================
+export async function servicioObtenerKpisTiempoReal(): Promise<KpisTiempoReal> {
+  const respuesta = await clienteApi.get<KpisTiempoReal>(
+    "/api/reportes/kpis-tiempo-real"
+  );
+  return respuesta.data;
+}
+
+export async function servicioSimularRafagaOperativa(): Promise<ResultadoRafagaOperativa> {
+  const respuesta = await clienteApi.post<ResultadoRafagaOperativa>(
+    "/api/cad/simular-rafaga-operativa"
+  );
+  return respuesta.data;
+}
+
+export async function servicioAlternarSimulacionViva(
+  activar?: boolean
+): Promise<EstadoSimulacionViva> {
+  const respuesta = await clienteApi.post<EstadoSimulacionViva>(
+    "/api/cad/simulacion-viva/alternar",
+    activar !== undefined ? { activar } : {}
+  );
+  return respuesta.data;
+}
+
+// ============================================================================
+// RELEASE ENTERPRISE V5.0: OPERACIONES ESPECIALES, K9, SARLAFT, SG-SST & IA FORENSE
+// ============================================================================
+export async function servicioListarEscoltasBasc(): Promise<MisionEscoltaBasc[]> {
+  const respuesta = await clienteApi.get<MisionEscoltaBasc[]>(
+    "/api/operaciones-especiales/escoltas"
+  );
+  return respuesta.data;
+}
+
+export async function servicioCrearEscoltaBasc(
+  datos: SolicitudCrearEscoltaBasc
+): Promise<MisionEscoltaBasc> {
+  const respuesta = await clienteApi.post<MisionEscoltaBasc>(
+    "/api/operaciones-especiales/escoltas",
+    datos
+  );
+  return respuesta.data;
+}
+
+export async function servicioVerificarCorredorEscolta(
+  misionId: number,
+  latActual: number,
+  lonActual: number,
+  desviacionReportadaMetros?: number
+): Promise<RespuestaVerificarCorredorEscolta> {
+  const respuesta = await clienteApi.post<RespuestaVerificarCorredorEscolta>(
+    `/api/operaciones-especiales/escoltas/${misionId}/verificar-corredor`,
+    {
+      lat_actual: latActual,
+      lon_actual: lonActual,
+      desviacion_reportada_metros: desviacionReportadaMetros,
+    }
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarBinomiosK9(): Promise<BinomioCaninoK9[]> {
+  const respuesta = await clienteApi.get<BinomioCaninoK9[]>(
+    "/api/operaciones-especiales/binomios-k9"
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarDescansoK9(
+  k9Id: number,
+  minutosDescansoCanil: number = 45,
+  observacionesGuia?: string
+): Promise<{
+  k9_id: number;
+  codigo_unidad_k9: string;
+  nombre_canino: string;
+  horas_previas_turno: number;
+  horas_trabajadas_turno: number;
+  estado_fatiga: string;
+  semaforo_normativo_k9: string;
+  ultimo_descanso_canil: string;
+  mensaje: string;
+}> {
+  const respuesta = await clienteApi.post(
+    `/api/operaciones-especiales/binomios-k9/${k9Id}/registrar-descanso`,
+    {
+      minutos_descanso_canil: minutosDescansoCanil,
+      hidratacion_verificada: true,
+      observaciones_guia:
+        observacionesGuia ||
+        "Descanso normativo en canil climatizado e hidratación isotónica verificada.",
+    }
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarMediosTecnologicos(
+  puestoId?: number
+): Promise<MedioTecnologicoPuesto[]> {
+  const respuesta = await clienteApi.get<MedioTecnologicoPuesto[]>(
+    "/api/operaciones-especiales/medios-tecnologicos",
+    { params: puestoId ? { puesto_id: puestoId } : {} }
+  );
+  return respuesta.data;
+}
+
+export async function servicioConsultarSarlaft(datos: {
+  documento: string;
+  nombre_completo: string;
+  tipo_tercero: "ASPIRANTE_GUARDA" | "CLIENTE_B2B" | "VISITANTE_CRITICO";
+}): Promise<CertificadoSarlaft> {
+  const respuesta = await clienteApi.post<CertificadoSarlaft>(
+    "/api/cumplimiento/sarlaft/consultar",
+    datos
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarHistorialSarlaft(): Promise<CertificadoSarlaft[]> {
+  const respuesta = await clienteApi.get<CertificadoSarlaft[]>(
+    "/api/cumplimiento/sarlaft/historial"
+  );
+  return respuesta.data;
+}
+
+export async function servicioConsultarSemaforoChalecosKevlar(): Promise<
+  SemaforoChalecoKevlar[]
+> {
+  const respuesta = await clienteApi.get<SemaforoChalecoKevlar[]>(
+    "/api/cumplimiento/sst/chalecos-kevlar"
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarCheckAptitudSst(datos: {
+  puesto_id: number;
+  operador_id?: number;
+  horas_sueno_reportadas: number;
+  cero_alcohol_fatiga: boolean;
+  chaleco_kevlar_verificado: boolean;
+  serial_chaleco_asignado?: string;
+  observaciones_sst?: string;
+}): Promise<RespuestaCheckAptitudSst> {
+  const respuesta = await clienteApi.post<RespuestaCheckAptitudSst>(
+    "/api/cumplimiento/sst/check-aptitud",
+    datos
+  );
+  return respuesta.data;
+}
+
+export async function servicioListarMonitoresHombreCaido(): Promise<
+  MonitorHombreCaido[]
+> {
+  const respuesta = await clienteApi.get<MonitorHombreCaido[]>(
+    "/api/cumplimiento/sst/hombre-caido"
+  );
+  return respuesta.data;
+}
+
+export async function servicioRegistrarLatidoHombreCaido(
+  puestoId: number,
+  simularInactividadCritica: boolean = false
+): Promise<{
+  monitoreo_id: number;
+  puesto_id: number;
+  operador_id: number;
+  estado_supervivencia: string;
+  ultimo_latido_utc: string;
+  latidos_consecutivos_exitosos: number;
+  alertas_disparadas_turno: number;
+  mensaje: string;
+}> {
+  const respuesta = await clienteApi.post(
+    `/api/cumplimiento/sst/hombre-caido/${puestoId}/latido`,
+    { simular_inactividad_critica: simularInactividadCritica }
+  );
+  return respuesta.data;
+}
+
+export async function servicioGenerarBoletinRelevoIA(
+  puestoCodigoOId: string | number
+): Promise<BoletinRelevoIA> {
+  const respuesta = await clienteApi.get<BoletinRelevoIA>(
+    `/api/inteligencia/boletin-relevo/${puestoCodigoOId}`
+  );
+  return respuesta.data;
+}
+
+export async function servicioAuditarAntifraudeRondas(): Promise<AuditoriaAntifraudeRondas> {
+  const respuesta = await clienteApi.get<AuditoriaAntifraudeRondas>(
+    "/api/inteligencia/auditoria-antifraude-rondas"
+  );
+  return respuesta.data;
+}
+
+export async function servicioSimularSabotajeForense(
+  registroId?: number,
+  textoAdulterado?: string
+): Promise<RespuestaSabotajeForense> {
+  const respuesta = await clienteApi.post<RespuestaSabotajeForense>(
+    "/api/inteligencia/forense/simular-sabotaje",
+    {
+      registro_id: registroId,
+      texto_adulterado: textoAdulterado,
+    }
+  );
+  return respuesta.data;
+}
+
+export async function servicioRepararCadenaForense(): Promise<RespuestaReparacionForense> {
+  const respuesta = await clienteApi.post<RespuestaReparacionForense>(
+    "/api/inteligencia/forense/reparar-cadena"
+  );
+  return respuesta.data;
+}
+
+

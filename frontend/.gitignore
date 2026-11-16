@@ -1,7 +1,12 @@
 node_modules/
 dist/
 dist-ssr/
+.vite/
+coverage/
+*.tsbuildinfo
 *.local
+.DS_Store
+Thumbs.db
 .env
 .env.*
 !.env.example

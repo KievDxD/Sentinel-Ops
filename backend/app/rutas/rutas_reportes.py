@@ -277,3 +277,39 @@ async def descargar_respaldo_forense(
 
     return await generar_paquete_respaldo_forense(sesion_bd)
 
+
+@enrutador_reportes.get(
+    "/kpis-tiempo-real",
+    summary="Analítica y KPIs Ejecutivos en Tiempo Real + Auditoría Blockchain SHA-256 (V4.0)",
+)
+async def obtener_kpis_tiempo_real(
+    usuario_actual: ModeloUsuario = Depends(
+        requerir_roles(
+            RolUsuario.ADMINISTRADOR,
+            RolUsuario.SUPERVISOR,
+            RolUsuario.RRHH,
+            RolUsuario.OPERADOR,
+            RolUsuario.CLIENTE,
+        )
+    ),
+    sesion_bd: AsyncSession = Depends(obtener_sesion_bd),
+) -> dict:
+    """
+    Devuelve métricas agregadas calculadas en vivo desde la base de datos:
+    - % SLA de Cumplimiento de Rondas por puesto.
+    - Costo Acumulado de Nómina Semanal vs Horas Extras Generadas (Ley 2101).
+    - Tiempo Promedio de Reacción CAD (segundos) en alertas SOS.
+    - Estado de Integridad de Cadena Criptográfica SHA-256 (Minuta, Relevos y Kardex Balístico).
+    - Ocupación Perimetral Actual (visitantes y vehículos activos por sede).
+    """
+    from app.servicios.simulador_operativo import calcular_kpis_tiempo_real
+
+    kpis = await calcular_kpis_tiempo_real(sesion_bd)
+    if usuario_actual.rol == RolUsuario.CLIENTE and usuario_actual.puesto_base_id is not None:
+        kpis["sla_por_puesto"] = [
+            p for p in kpis["sla_por_puesto"]
+            if p["puesto_id"] == usuario_actual.puesto_base_id
+        ]
+    return kpis
+
+
